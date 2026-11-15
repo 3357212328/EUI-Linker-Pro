@@ -1,55 +1,54 @@
-cmake_minimum_required(VERSION 3.21)
-project(FluentLinkerPro VERSION 3.0.0 LANGUAGES C CXX)
+cmake_minimum_required(VERSION 3.22)
+project(fluent_linker LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-if(POLICY CMP0077)
-    cmake_policy(SET CMP0077 NEW)
+# Auto-detect local Qt installation if CMAKE_PREFIX_PATH was not passed explicitly.
+if(NOT DEFINED CMAKE_PREFIX_PATH AND EXISTS "D:/Qt/6.8.3/msvc2022_64/lib/cmake/Qt6")
+    list(APPEND CMAKE_PREFIX_PATH "D:/Qt/6.8.3/msvc2022_64")
 endif()
 
-# Configure Slint for crisp Windows Fluent UI (Skia DirectWrite renderer + DLL bundled next to exe)
-set(BUILD_SHARED_LIBS ON CACHE BOOL "Build Slint as shared runtime DLL beside fluent_linker.exe" FORCE)
-set(SLINT_STYLE "fluent" CACHE STRING "Slint widget style" FORCE)
-set(SLINT_FEATURE_BACKEND_WINIT ON CACHE BOOL "" FORCE)
-set(SLINT_FEATURE_RENDERER_SKIA ON CACHE BOOL "" FORCE)
-set(SLINT_FEATURE_RENDERER_FEMTOVG ON CACHE BOOL "" FORCE)
-set(SLINT_FEATURE_INTERPRETER OFF CACHE BOOL "" FORCE)
-set(SLINT_FEATURE_TESTING OFF CACHE BOOL "" FORCE)
-set(DEFAULT_SLINT_EMBED_RESOURCES "embed-files" CACHE STRING "" FORCE)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2)
+qt_standard_project_setup(REQUIRES 6.5)
 
-include(FetchContent)
-FetchContent_Declare(
-    Slint
-    GIT_REPOSITORY https://github.com/slint-ui/slint.git
-    GIT_TAG v1.18.1
-    GIT_SHALLOW TRUE
-    SOURCE_SUBDIR api/cpp
+set(QML_SOURCES
+    src/qml/Main.qml
+    src/qml/AppTheme.qml
+    src/qml/VecIcon.qml
+    src/qml/StatusBadge.qml
+    src/qml/FluentButton.qml
+    src/qml/FluentCard.qml
+    src/qml/FluentInput.qml
+    src/qml/AnimatedSegmentBar.qml
+    src/qml/FluentScrollView.qml
+    src/qml/CreatePage.qml
+    src/qml/InspectPage.qml
+    src/qml/HistoryPage.qml
+    src/qml/GuidePage.qml
 )
-FetchContent_MakeAvailable(Slint)
 
-set(APP_SOURCES
+foreach(qml_file ${QML_SOURCES})
+    get_filename_component(qml_name "${qml_file}" NAME)
+    set_source_files_properties("${qml_file}" PROPERTIES QT_RESOURCE_ALIAS "${qml_name}")
+endforeach()
+
+qt_add_executable(fluent_linker WIN32
     src/main.cpp
-    src/app_controller.h
-    src/linker_types.h
+    src/qt_backend.cpp
+    src/qt_backend.h
     src/win_linker.h
+    src/linker_types.h
+    src/app.rc
 )
 
-if(WIN32)
-    set(FLUENT_ICON_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/assets/icon.ico")
-    if(EXISTS "${FLUENT_ICON_SOURCE}")
-        file(TO_CMAKE_PATH "${FLUENT_ICON_SOURCE}" FLUENT_ICON_RC_PATH)
-        set(FLUENT_ICON_RC "${CMAKE_CURRENT_BINARY_DIR}/fluent_linker_icon.rc")
-        file(WRITE "${FLUENT_ICON_RC}" "1 ICON \"${FLUENT_ICON_RC_PATH}\"\n")
-        list(APPEND APP_SOURCES "${FLUENT_ICON_RC}")
-    endif()
-endif()
-
-add_executable(fluent_linker ${APP_SOURCES})
-
-slint_target_sources(fluent_linker
-    src/ui/app.slint
+qt_add_qml_module(fluent_linker
+    URI FluentLinker
+    VERSION 1.0
+    QML_FILES ${QML_SOURCES}
+    RESOURCES
+        assets/icon.png
 )
 
 target_include_directories(fluent_linker PRIVATE
@@ -57,36 +56,41 @@ target_include_directories(fluent_linker PRIVATE
 )
 
 target_link_libraries(fluent_linker PRIVATE
-    Slint::Slint
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Qml
+    Qt6::Quick
+    Qt6::QuickControls2
+    dwmapi
+    shell32
+    ole32
+    uuid
+    advapi32
+    user32
 )
 
-if(WIN32)
-    target_compile_definitions(fluent_linker PRIVATE
-        NOMINMAX
-        WIN32_LEAN_AND_MEAN
-        UNICODE
-        _UNICODE
-        SLINT_PREFER_SKIA_BACKEND=1
-    )
-    target_link_libraries(fluent_linker PRIVATE
-        shell32
-        ole32
-        uuid
-        advapi32
-        user32
-        dwmapi
-    )
-    if(MSVC)
-        target_compile_options(fluent_linker PRIVATE /utf-8)
-        target_link_options(fluent_linker PRIVATE /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup)
-    endif()
+target_compile_definitions(fluent_linker PRIVATE
+    UNICODE
+    _UNICODE
+    NOMINMAX
+    WIN32_LEAN_AND_MEAN
+)
 
-    # Copy any runtime DLLs if a shared library configuration is chosen externally
-    add_custom_command(
-        TARGET fluent_linker POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_RUNTIME_DLLS:fluent_linker>
-            $<TARGET_FILE_DIR:fluent_linker>
-        COMMAND_EXPAND_LISTS
-    )
+if(MSVC)
+    target_compile_options(fluent_linker PRIVATE /utf-8 /permissive- /W3)
 endif()
+
+# Deploy Qt runtime DLLs and QML plugins beside fluent_linker.exe after build.
+get_target_property(_qt_qmake_exe Qt6::qmake IMPORTED_LOCATION)
+get_filename_component(_qt_bin_dir "${_qt_qmake_exe}" DIRECTORY)
+find_program(WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${_qt_bin_dir}" REQUIRED)
+
+add_custom_command(TARGET fluent_linker POST_BUILD
+    COMMAND "${WINDEPLOYQT_EXECUTABLE}"
+        "$<IF:$<CONFIG:Debug>,--debug,--release>"
+        --qmldir "${CMAKE_CURRENT_SOURCE_DIR}/src/qml"
+        --no-translations
+        "$<TARGET_FILE:fluent_linker>"
+    COMMENT "Running windeployqt for fluent_linker..."
+    VERBATIM
+)

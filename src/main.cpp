@@ -1,25 +1,44 @@
-#include "app.h"
-#include "app_controller.h"
+#include "qt_backend.h"
 
-#include <cstdlib>
-#include <windows.h>
+#include <QGuiApplication>
+#include <QIcon>
+#include <QQmlApplicationEngine>
+#include <QQmlContext>
+#include <QQuickStyle>
+#include <QWindow>
 
-int main(int /*argc*/, char** /*argv*/) {
-    // Prefer Skia (DirectWrite crisp font hinting & GPU acceleration) when compiled in,
-    // gracefully falling back if another renderer is active.
-#ifdef SLINT_PREFER_SKIA_BACKEND
-    _putenv_s("SLINT_BACKEND", "winit-skia");
-#endif
+int main(int argc, char* argv[]) {
+    QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
+        Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
 
-    // Ensure common controls / shell COM visual styles behave properly on Windows.
-    SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+    QGuiApplication app(argc, argv);
+    app.setApplicationName(QStringLiteral("FluentLinkerPro"));
+    app.setApplicationDisplayName(QStringLiteral("Fluent Linker Pro"));
+    app.setOrganizationName(QStringLiteral("FluentLinker"));
+    app.setWindowIcon(QIcon(QStringLiteral(":/qt/qml/FluentLinker/assets/icon.png")));
 
-    auto window = AppWindow::create();
-    fl::AppController controller(window);
+    QQuickStyle::setStyle(QStringLiteral("Basic"));
 
-    window->show();
-    controller.onWindowShown();
+    fl::QtLinkBackend backend;
 
-    slint::run_event_loop();
-    return 0;
+    QQmlApplicationEngine engine;
+    engine.rootContext()->setContextProperty(QStringLiteral("backend"), &backend);
+
+    QObject::connect(
+        &engine,
+        &QQmlApplicationEngine::objectCreationFailed,
+        &app,
+        []() { QCoreApplication::exit(-1); },
+        Qt::QueuedConnection);
+
+    engine.loadFromModule(QStringLiteral("FluentLinker"), QStringLiteral("Main"));
+    if (engine.rootObjects().isEmpty()) {
+        return -1;
+    }
+
+    if (auto* window = qobject_cast<QWindow*>(engine.rootObjects().constFirst())) {
+        backend.attachWindow(window);
+    }
+
+    return app.exec();
 }

@@ -1,9 +1,11 @@
-name: Build & Release Fluent Linker Pro
+name: Build and Release Windows x64 (Qt 6)
 
 on:
   push:
+    branches:
+      - qt
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
 
 permissions:
@@ -11,14 +13,20 @@ permissions:
 
 jobs:
   build-windows:
-    name: Windows x64 (MSVC)
-    runs-on: windows-latest
+    runs-on: windows-2022
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Rust stable toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - name: Install Qt 6.8.3 (MSVC 2022 x64)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.3'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2022_64'
+          modules: 'qtshadertools qtimageformats'
 
       - name: Configure CMake
         run: cmake -S . -B build -A x64
@@ -29,13 +37,14 @@ jobs:
       - name: Stage release bundle
         shell: pwsh
         run: |
-          $tag = if ($env:GITHUB_REF_NAME -and $env:GITHUB_REF_TYPE -eq "tag") { $env:GITHUB_REF_NAME } else { "dev" }
+          $tag = if ($env:GITHUB_REF_NAME -and $env:GITHUB_REF_TYPE -eq "tag") { $env:GITHUB_REF_NAME } else { "qt-dev" }
           $zipName = "FluentLinkerPro-$tag-win-x64.zip"
           "ZIP_NAME=$zipName" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           $stage = "dist/FluentLinkerPro-win-x64"
           New-Item -ItemType Directory -Force -Path "$stage/assets" | Out-Null
-          Copy-Item -Path build/Release/fluent_linker.exe -Destination $stage -Force
-          Copy-Item -Path build/Release/*.dll -Destination $stage -Force -ErrorAction SilentlyContinue
+          Get-ChildItem -Path "build/Release" | Where-Object {
+            $_.Name -notin @("fluent_linker.exp", "fluent_linker.lib", "fluent_linker.pdb") -and $_.Extension -ne ".pdb"
+          } | Copy-Item -Destination $stage -Recurse -Force
           Copy-Item -Path assets/icon.ico -Destination "$stage/assets" -Force
           Copy-Item -Path assets/icon.png -Destination "$stage/assets" -Force
           Compress-Archive -Path "$stage/*" -DestinationPath $zipName -Force
@@ -43,11 +52,12 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: FluentLinkerPro-win-x64
+          name: FluentLinkerPro-Qt-win-x64
           path: ${{ env.ZIP_NAME }}
 
-      - name: Attach to GitHub Release
+      - name: Publish GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           files: ${{ env.ZIP_NAME }}
+          generate_release_notes: true
