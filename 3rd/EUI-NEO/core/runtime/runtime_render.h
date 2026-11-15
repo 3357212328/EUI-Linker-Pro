@@ -930,6 +930,39 @@ inline bool RuntimeRenderer::renderRetainedElements(
     return true;
 }
 
+inline Rect snapPixelAlignedFrame(const Rect& frame, const Transform& transform, const RenderTransform& renderTransform) {
+    if (frame.width <= 0.0f || frame.height <= 0.0f) {
+        return frame;
+    }
+    const bool localAxisAligned =
+        std::fabs(transform.scale.x - 1.0f) <= 0.0001f &&
+        std::fabs(transform.scale.y - 1.0f) <= 0.0001f &&
+        std::fabs(transform.rotate) <= 0.0001f &&
+        std::fabs(transform.rotateX) <= 0.0001f &&
+        std::fabs(transform.rotateY) <= 0.0001f;
+    if (!localAxisAligned) {
+        return frame;
+    }
+    if (renderTransform.active) {
+        const TransformMatrix& m = renderTransform.matrix;
+        const bool matrixAxisAligned =
+            std::fabs(m.m00 - 1.0f) <= 0.0001f && std::fabs(m.m01) <= 0.0001f &&
+            std::fabs(m.m10) <= 0.0001f && std::fabs(m.m11 - 1.0f) <= 0.0001f &&
+            std::fabs(m.px) <= 0.0001f && std::fabs(m.py) <= 0.0001f &&
+            std::fabs(m.pw - 1.0f) <= 0.0001f;
+        if (!matrixAxisAligned) {
+            return frame;
+        }
+    }
+    const float left = std::round(frame.x);
+    const float top = std::round(frame.y);
+    float right = std::round(frame.x + frame.width);
+    float bottom = std::round(frame.y + frame.height);
+    right = frame.width >= 0.5f ? std::max(left + 1.0f, right) : std::max(left, right);
+    bottom = frame.height >= 0.5f ? std::max(top + 1.0f, bottom) : std::max(top, bottom);
+    return {left, top, right - left, bottom - top};
+}
+
 inline void RuntimeRenderer::renderRect(
     const Element& element,
     int windowWidth,
@@ -944,9 +977,9 @@ inline void RuntimeRenderer::renderRect(
         }
     }
 
-    const Rect frame = toPixelRect(instance.frame.value(), dpiScale);
-    const Color currentColor = instance.color.value();
     Transform transform = scaleTransform(instance.transform.value(), dpiScale);
+    const Rect frame = snapPixelAlignedFrame(toPixelRect(instance.frame.value(), dpiScale), transform, renderTransform);
+    const Color currentColor = instance.color.value();
 
     instance.primitive->setBounds(frame.x, frame.y, frame.width, frame.height);
     instance.primitive->setColor(currentColor);
@@ -1107,8 +1140,8 @@ inline void RuntimeRenderer::renderImage(
         }
     }
 
-    const Rect frame = toPixelRect(instance.frame.value(), dpiScale);
     Transform transform = scaleTransform(instance.transform.value(), dpiScale);
+    const Rect frame = snapPixelAlignedFrame(toPixelRect(instance.frame.value(), dpiScale), transform, renderTransform);
 
     instance.primitive->setBounds(frame.x, frame.y, frame.width, frame.height);
     instance.primitive->setTint(instance.tint.value());

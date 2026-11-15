@@ -117,6 +117,9 @@ bool ensureTextRenderResources(TextRenderResources& resources) {
         "    } else {\n"
         "        float alpha = texture(uGrayAtlas, vUv).r;\n"
         "        if (alpha <= 0.0) discard;\n"
+        "        float luma = dot(uColor.rgb, vec3(0.299, 0.587, 0.114));\n"
+        "        float gammaExp = mix(0.62, 0.88, clamp(luma, 0.0, 1.0));\n"
+        "        alpha = pow(clamp(alpha, 0.0, 1.0), gammaExp);\n"
         "        FragColor = vec4(uColor.rgb, uColor.a * alpha);\n"
         "    }\n"
         "}\n";

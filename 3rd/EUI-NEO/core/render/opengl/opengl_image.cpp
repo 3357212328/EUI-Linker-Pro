@@ -718,7 +718,7 @@ bool OpenGLRenderBackend::ensureImageResources() {
         "void main() {\n"
         "    vec2 center = uRect.xy + uRect.zw * 0.5;\n"
         "    float distanceToEdge = roundedBoxDistance(vLocalPos - center, uRect.zw * 0.5, uRadius);\n"
-        "    float edgeWidth = max(fwidth(distanceToEdge), 0.75);\n"
+        "    float edgeWidth = max(length(vec2(dFdx(distanceToEdge), dFdy(distanceToEdge))) * 0.52, 0.45);\n"
         "    float shapeAlpha = 1.0 - smoothstep(-edgeWidth, edgeWidth, distanceToEdge);\n"
         "    if (shapeAlpha <= 0.0) discard;\n"
         "    vec4 sampled = sampleImage(vUV);\n"

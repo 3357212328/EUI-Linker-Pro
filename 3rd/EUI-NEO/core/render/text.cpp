@@ -39,7 +39,7 @@ constexpr const char* kDefaultUiFontFile = "JingNanJunJunTi-JinNanJunJunTi-Bold-
 constexpr const char* kDefaultIconFontFile = "Font Awesome 7 Free-Solid-900.otf";
 constexpr int kGrayAtlasSize = 2048;
 constexpr int kColorAtlasSize = 1024;
-constexpr FT_Int32 kGlyphLoadFlags = FT_LOAD_DEFAULT | FT_LOAD_COLOR | FT_LOAD_NO_SVG | FT_LOAD_TARGET_LIGHT;
+constexpr FT_Int32 kGlyphLoadFlags = FT_LOAD_DEFAULT | FT_LOAD_COLOR | FT_LOAD_NO_SVG | FT_LOAD_TARGET_NORMAL;
 
 struct GlyphAdvance {
     unsigned int index = std::numeric_limits<unsigned int>::max();
@@ -867,9 +867,7 @@ float loadGlyphAdvance(FontFace& face,
         }
         cached.index = glyphIndex;
         cached.height = static_cast<float>(face.face->glyph->metrics.height) / 64.0f;
-        cached.advance = FT_IS_SCALABLE(face.face)
-            ? static_cast<float>(face.face->glyph->linearHoriAdvance) / 65536.0f
-            : static_cast<float>(face.face->glyph->advance.x) / 64.0f;
+        cached.advance = static_cast<float>(face.face->glyph->advance.x) / 64.0f;
     }
 
     // Store unscaled metrics: emoji fallback can be capped by the primary
@@ -1740,13 +1738,17 @@ void TextPrimitive::Impl::rebuildVertices() {
     const auto close = [](float left, float right) {
         return std::fabs(left - right) <= 0.0001f;
     };
-    const bool pixelAlignedMatrix = hasTransformMatrix_ &&
-        close(transformMatrix_.m00, 1.0f) && close(transformMatrix_.m01, 0.0f) &&
-        close(transformMatrix_.m10, 0.0f) && close(transformMatrix_.m11, 1.0f) &&
-        close(transformMatrix_.px, 0.0f) && close(transformMatrix_.py, 0.0f) &&
-        close(transformMatrix_.pw, 1.0f) &&
-        close(transformMatrix_.tx, std::round(transformMatrix_.tx)) &&
-        close(transformMatrix_.ty, std::round(transformMatrix_.ty));
+    const bool pixelAlignedMatrix = hasTransformMatrix_
+        ? (close(transformMatrix_.m00, 1.0f) && close(transformMatrix_.m01, 0.0f) &&
+           close(transformMatrix_.m10, 0.0f) && close(transformMatrix_.m11, 1.0f) &&
+           close(transformMatrix_.px, 0.0f) && close(transformMatrix_.py, 0.0f) &&
+           close(transformMatrix_.pw, 1.0f))
+        : (std::fabs(transform_.scale.x - 1.0f) <= 0.0001f &&
+           std::fabs(transform_.scale.y - 1.0f) <= 0.0001f &&
+           std::fabs(transform_.rotate) <= 0.0001f &&
+           std::fabs(transform_.rotateX) <= 0.0001f &&
+           std::fabs(transform_.rotateY) <= 0.0001f &&
+           std::fabs(visualScale_ - 1.0f) <= 0.0001f);
     float blockYOffset = 0.0f;
     if (style_.verticalAlign == VerticalAlign::Center) {
         float inkTop = std::numeric_limits<float>::max();
