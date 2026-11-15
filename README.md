@@ -2,7 +2,7 @@
 
 Windows NTFS 符号链接、目录联接与迁移工作台（C++20 原生引擎 + Qt 6.8 Quick / QML 现代流畅界面）。
 
-> 说明：当前 `qt` 分支采用 **Qt 6.8.3 Quick (QML + `QtQuick.Effects` + `QtQuick.Shapes`)** 重构桌面前端；原 `main` 分支保留了 Slint v1.18.1 版本。
+> 说明：当前 `qt` 分支（默认主分支）采用 **Qt 6.8.3 Quick (QML + `QtQuick.Effects` + `QtQuick.Shapes`)** 重构桌面前端；`slint` 分支保留了 Slint v1.18.1 版本。
 
 ## 核心功能
 
