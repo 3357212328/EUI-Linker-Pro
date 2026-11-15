@@ -36,13 +36,13 @@ void computeInitialWindowMetrics(int& outW, int& outH, int& outMinW, int& outMin
     const int screenW = std::max(800, GetSystemMetrics(SM_CXSCREEN));
     const int screenH = std::max(600, GetSystemMetrics(SM_CYSCREEN));
 
-    const int desiredW = static_cast<int>(1120.0f * scale + 0.5f);
-    const int desiredH = static_cast<int>(740.0f * scale + 0.5f);
-    const int desiredMinW = static_cast<int>(780.0f * scale + 0.5f);
-    const int desiredMinH = static_cast<int>(580.0f * scale + 0.5f);
+    const int desiredW = static_cast<int>(1240.0f * scale + 0.5f);
+    const int desiredH = static_cast<int>(820.0f * scale + 0.5f);
+    const int desiredMinW = static_cast<int>(860.0f * scale + 0.5f);
+    const int desiredMinH = static_cast<int>(640.0f * scale + 0.5f);
 
-    outW = std::min(desiredW, static_cast<int>(screenW * 0.90f));
-    outH = std::min(desiredH, static_cast<int>(screenH * 0.88f));
+    outW = std::min(desiredW, static_cast<int>(screenW * 0.92f));
+    outH = std::min(desiredH, static_cast<int>(screenH * 0.92f));
     outMinW = std::min(desiredMinW, outW);
     outMinH = std::min(desiredMinH, outH);
 }
@@ -53,10 +53,10 @@ namespace app {
 
 const DslAppConfig& dslAppConfig() {
     static const DslAppConfig config = [] {
-        int winW = 1120;
-        int winH = 740;
-        int minW = 780;
-        int minH = 580;
+        int winW = 1240;
+        int winH = 820;
+        int minW = 860;
+        int minH = 640;
         computeInitialWindowMetrics(winW, winH, minW, minH);
 
         const fl::AppSettings startupSettings = fl::win::LoadSettings();
@@ -71,12 +71,14 @@ const DslAppConfig& dslAppConfig() {
             .clearColor(initClear)
             .windowSize(winW, winH)
             .minWindowSize(minW, minH)
+            .fps(0.0)
             .showDebugStatsInTitle(false)
             .showDebugOverlay(false)
             .iconPath("assets/icon.png")
             .textFont("Microsoft YaHei")
             .onStart([] {
                 fl::actions::InitializeAppState(globalState());
+                fl::actions::EnsureValidation(globalState());
             })
             .onShutdown([] {
                 app::async::cancel("fl.scan");
@@ -107,7 +109,9 @@ const DslAppConfig& dslAppConfig() {
 
 void compose(eui::Ui& ui, const eui::Screen& screen) {
     auto& state = globalState();
-    const fl::ui_kit::UiPalette p = fl::ui_kit::MakePalette(state.darkTheme);
+    static const fl::ui_kit::UiPalette darkPalette = fl::ui_kit::MakePalette(true);
+    static const fl::ui_kit::UiPalette lightPalette = fl::ui_kit::MakePalette(false);
+    const fl::ui_kit::UiPalette& p = state.darkTheme ? darkPalette : lightPalette;
 
     // Full-window animated theme background
     ui.rect("app.canvas")
@@ -116,7 +120,7 @@ void compose(eui::Ui& ui, const eui::Screen& screen) {
         .transition(p.anim)
         .build();
 
-    const float headerH = 74.0f;
+    const float headerH = 78.0f;
     const float padX = 20.0f;
     const float padY = 16.0f;
     const float contentW = std::max(320.0f, screen.width - padX * 2.0f);
@@ -141,7 +145,7 @@ void compose(eui::Ui& ui, const eui::Screen& screen) {
                         .color(p.border)
                         .build();
 
-                    const bool compactHeader = screen.width < 940.0f;
+                    const bool compactHeader = screen.width < 1040.0f;
                     ui.row("app.header.row")
                         .size(screen.width, headerH)
                         .padding(0.0f, padX, 0.0f, padX)
@@ -150,33 +154,33 @@ void compose(eui::Ui& ui, const eui::Screen& screen) {
                         .content([&] {
                             // Brand Logo & Title
                             ui.row("app.brand")
-                                .height(42.0f)
+                                .height(46.0f)
                                 .gap(10.0f)
                                 .alignItems(eui::Align::CENTER)
                                 .content([&] {
                                     ui.image("app.brand.logo")
                                         .source(eui::platform::resolveResourcePath("assets/icon.png"))
-                                        .size(32.0f, 32.0f)
+                                        .size(36.0f, 36.0f)
                                         .radius(8.0f)
                                         .contain()
                                         .build();
 
                                     ui.column("app.brand.titles")
                                         .height(eui::SizeValue::wrapContent())
-                                        .gap(1.0f)
+                                        .gap(2.0f)
                                         .content([&] {
                                             ui.text("app.brand.name")
                                                 .text("Fluent Linker Pro")
-                                                .fontSize(compactHeader ? 15.0f : 16.5f)
-                                                .lineHeight(20.0f)
+                                                .fontSize(compactHeader ? 17.0f : 19.0f)
+                                                .lineHeight(23.0f)
                                                 .fontWeight(700)
                                                 .color(p.text)
                                                 .build();
                                             if (!compactHeader) {
                                                 ui.text("app.brand.sub")
                                                     .text("NTFS 符号链接 · 搬家 · 体检工具")
-                                                    .fontSize(11.5f)
-                                                    .lineHeight(14.0f)
+                                                    .fontSize(13.5f)
+                                                    .lineHeight(17.0f)
                                                     .color(p.mutedText)
                                                     .build();
                                             }
@@ -188,13 +192,13 @@ void compose(eui::Ui& ui, const eui::Screen& screen) {
                             ui.row("app.header.spL").flexGrow(1.0f).height(1.0f).content([] {}).build();
 
                             // 4-tab Top Segmented Navigation
-                            const float navW = std::clamp(screen.width - (compactHeader ? 430.0f : 560.0f), 310.0f, 420.0f);
+                            const float navW = std::clamp(screen.width - (compactHeader ? 480.0f : 610.0f), 330.0f, 480.0f);
                             components::segmented(ui, "app.nav")
                                 .theme(p.tokens)
-                                .size(navW, 38.0f)
+                                .size(navW, 42.0f)
                                 .items({"创建与搬家", "链接体检", "执行历史", "原理指南"})
                                 .selected(state.activeTab)
-                                .fontSize(13.0f)
+                                .fontSize(15.0f)
                                 .transition(p.anim)
                                 .onChange([&](int idx) {
                                     state.activeTab = idx;
@@ -204,12 +208,12 @@ void compose(eui::Ui& ui, const eui::Screen& screen) {
                             ui.row("app.header.spR").flexGrow(1.0f).height(1.0f).content([] {}).build();
 
                             // Privilege Pill + Theme Switcher
-                            const float privW = compactHeader ? 104.0f : 118.0f;
+                            const float privW = compactHeader ? 114.0f : 136.0f;
                             if (state.isAdmin) {
-                                fl::ui_kit::StatusBadge(ui, "app.privBadge", p, privW, 30.0f,
+                                fl::ui_kit::StatusBadge(ui, "app.privBadge", p, privW, 32.0f,
                                                         "管理员模式", 0xF3EDu, p.success);
                             } else if (state.isDevMode) {
-                                fl::ui_kit::StatusBadge(ui, "app.privBadge", p, privW, 30.0f,
+                                fl::ui_kit::StatusBadge(ui, "app.privBadge", p, privW, 32.0f,
                                                         compactHeader ? "免提权" : "开发者免提权", 0xF058u, p.info,
                                                         [&] {
                                                             if (fl::win::RelaunchAsAdmin()) {
@@ -217,7 +221,7 @@ void compose(eui::Ui& ui, const eui::Screen& screen) {
                                                             }
                                                         });
                             } else {
-                                fl::ui_kit::StatusBadge(ui, "app.privBadge", p, privW, 30.0f,
+                                fl::ui_kit::StatusBadge(ui, "app.privBadge", p, privW, 32.0f,
                                                         compactHeader ? "提权" : "提权管理员", 0xF3EDu, p.warning,
                                                         [&] {
                                                             if (fl::win::RelaunchAsAdmin()) {
@@ -229,7 +233,7 @@ void compose(eui::Ui& ui, const eui::Screen& screen) {
                                                         });
                             }
 
-                            fl::ui_kit::ActionButton(ui, "app.themeToggle", p, compactHeader ? 72.0f : 84.0f, 32.0f,
+                            fl::ui_kit::ActionButton(ui, "app.themeToggle", p, compactHeader ? 82.0f : 92.0f, 36.0f,
                                                      state.darkTheme ? "浅色" : "深色",
                                                      state.darkTheme ? 0xF185u : 0xF186u,
                                                      fl::ui_kit::ButtonKind::Secondary,
@@ -237,7 +241,7 @@ void compose(eui::Ui& ui, const eui::Screen& screen) {
                                                          state.darkTheme = !state.darkTheme;
                                                          fl::actions::PersistSettings(state);
                                                      },
-                                                     false, 12.5f);
+                                                     false, 14.5f);
                         })
                         .build();
                 })
@@ -273,7 +277,7 @@ void compose(eui::Ui& ui, const eui::Screen& screen) {
         .theme(p.tokens)
         .open(state.confirmOpen)
         .screen(screen.width, screen.height)
-        .size(510.0f, 272.0f)
+        .size(560.0f, 300.0f)
         .title(state.confirmTitle)
         .message(state.confirmMessage)
         .primaryText(state.confirmPrimaryLabel)
@@ -302,7 +306,7 @@ void compose(eui::Ui& ui, const eui::Screen& screen) {
         .theme(p.tokens)
         .style(toastStyle)
         .screen(screen.width, screen.height)
-        .size(370.0f, 88.0f)
+        .size(410.0f, 96.0f)
         .visible(state.toastVisible)
         .title(state.toastTitle)
         .message(state.toastMessage)

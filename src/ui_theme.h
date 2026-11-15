@@ -49,7 +49,7 @@ inline core::Shadow NoShadow() {
 
 inline UiPalette MakePalette(bool dark) {
     UiPalette p;
-    p.anim = eui::Transition::make(0.16f, eui::Ease::OutCubic);
+    p.anim = eui::Transition::make(0.11f, eui::Ease::OutCubic);
     if (dark) {
         p.tokens = components::theme::dark();
         p.tokens.background = rgb255(11, 16, 24);
@@ -58,28 +58,28 @@ inline UiPalette MakePalette(bool dark) {
         p.tokens.surfaceHover = rgb255(28, 39, 58);
         p.tokens.surfaceActive = rgb255(37, 51, 74);
         p.tokens.text = rgb255(241, 245, 249);
-        p.tokens.border = rgb255(148, 163, 184, 0.22f);
+        p.tokens.border = rgb255(148, 163, 184, 0.24f);
 
         p.canvas = p.tokens.background;
-        p.headerBg = rgb255(15, 22, 34, 0.96f);
+        p.headerBg = rgb255(15, 22, 34, 0.98f);
         p.cardBg = p.tokens.surface;
         p.cardAltBg = rgb255(24, 34, 52);
         p.accent = p.tokens.primary;
         p.accentText = rgb255(56, 189, 248);
         p.accentSoft = rgb255(14, 165, 233, 0.14f);
         p.text = p.tokens.text;
-        p.mutedText = rgb255(148, 163, 184);
-        p.subtleText = rgb255(100, 116, 139);
+        p.mutedText = rgb255(168, 181, 199);
+        p.subtleText = rgb255(118, 134, 156);
         p.border = p.tokens.border;
         p.borderStrong = rgb255(56, 189, 248, 0.48f);
         p.consoleBg = rgb255(8, 12, 20);
-        p.consoleText = rgb255(186, 230, 253);
+        p.consoleText = rgb255(198, 235, 255);
 
         p.info = {rgb255(56, 189, 248), rgb255(14, 165, 233, 0.13f), rgb255(56, 189, 248, 0.35f)};
         p.success = {rgb255(52, 211, 153), rgb255(16, 185, 129, 0.13f), rgb255(52, 211, 153, 0.35f)};
         p.warning = {rgb255(251, 191, 36), rgb255(245, 158, 11, 0.13f), rgb255(251, 191, 36, 0.36f)};
         p.danger = {rgb255(248, 113, 113), rgb255(239, 68, 68, 0.14f), rgb255(248, 113, 113, 0.38f)};
-        p.cardShadow = {true, {0.0f, 4.0f}, 18.0f, 0.0f, {0.0f, 0.0f, 0.0f, 0.28f}, false};
+        p.cardShadow = NoShadow();
     } else {
         p.tokens = components::theme::light();
         p.tokens.background = rgb255(243, 246, 250);
@@ -88,10 +88,10 @@ inline UiPalette MakePalette(bool dark) {
         p.tokens.surfaceHover = rgb255(237, 242, 248);
         p.tokens.surfaceActive = rgb255(225, 233, 243);
         p.tokens.text = rgb255(15, 23, 42);
-        p.tokens.border = rgb255(15, 23, 42, 0.12f);
+        p.tokens.border = rgb255(15, 23, 42, 0.14f);
 
         p.canvas = p.tokens.background;
-        p.headerBg = rgb255(255, 255, 255, 0.96f);
+        p.headerBg = rgb255(255, 255, 255, 0.98f);
         p.cardBg = p.tokens.surface;
         p.cardAltBg = rgb255(248, 250, 252);
         p.accent = p.tokens.primary;
@@ -109,8 +109,23 @@ inline UiPalette MakePalette(bool dark) {
         p.success = {rgb255(5, 150, 105), rgb255(16, 185, 129, 0.10f), rgb255(5, 150, 105, 0.28f)};
         p.warning = {rgb255(180, 83, 9), rgb255(245, 158, 11, 0.10f), rgb255(180, 83, 9, 0.28f)};
         p.danger = {rgb255(220, 38, 38), rgb255(239, 68, 68, 0.09f), rgb255(220, 38, 38, 0.28f)};
-        p.cardShadow = {true, {0.0f, 3.0f}, 14.0f, 0.0f, {0.06f, 0.09f, 0.16f, 0.08f}, false};
+        p.cardShadow = {true, {0.0f, 2.0f}, 8.0f, 0.0f, {0.06f, 0.09f, 0.16f, 0.06f}, false};
     }
+
+    // Compensate Microsoft YaHei's tall ascender-descender EM ratio so controls and tables render crisply
+    auto& typo = p.tokens.metrics.typography;
+    typo.micro = 13.0f;
+    typo.caption = 14.5f;
+    typo.hint = 15.0f;
+    typo.label = 15.5f;
+    typo.option = 16.0f;
+    typo.body = 16.5f;
+    typo.input = 17.0f;
+    typo.control = 18.0f;
+    typo.cardTitle = 19.5f;
+    typo.subtitle = 20.0f;
+    typo.title = 22.0f;
+    typo.heading = 24.5f;
     return p;
 }
 
@@ -175,23 +190,23 @@ inline void SectionHeader(eui::Ui& ui,
     ui.row(id)
         .width(eui::SizeValue::fill())
         .height(eui::SizeValue::wrapContent())
-        .gap(10.0f)
+        .gap(12.0f)
         .alignItems(eui::Align::CENTER)
         .content([&] {
             ui.stack(id + ".badge")
-                .size(28.0f, 28.0f)
+                .size(34.0f, 34.0f)
                 .content([&] {
                     ui.rect(id + ".badge.bg")
-                        .size(28.0f, 28.0f)
-                        .radius(8.0f)
+                        .size(34.0f, 34.0f)
+                        .radius(9.0f)
                         .color(p.accentSoft)
                         .border(1.0f, p.borderStrong)
                         .build();
                     ui.text(id + ".badge.icon")
-                        .size(28.0f, 28.0f)
+                        .size(34.0f, 34.0f)
                         .icon(iconCp)
-                        .fontSize(13.0f)
-                        .lineHeight(15.0f)
+                        .fontSize(15.5f)
+                        .lineHeight(18.0f)
                         .color(p.accentText)
                         .horizontalAlign(eui::HorizontalAlign::Center)
                         .verticalAlign(eui::VerticalAlign::Center)
@@ -202,20 +217,20 @@ inline void SectionHeader(eui::Ui& ui,
             ui.column(id + ".titles")
                 .flexGrow(1.0f)
                 .height(eui::SizeValue::wrapContent())
-                .gap(2.0f)
+                .gap(3.0f)
                 .content([&] {
                     ui.text(id + ".title")
                         .text(title)
-                        .fontSize(16.0f)
-                        .lineHeight(20.0f)
+                        .fontSize(19.0f)
+                        .lineHeight(24.0f)
                         .fontWeight(600)
                         .color(p.text)
                         .build();
                     if (!subtitle.empty()) {
                         ui.text(id + ".subtitle")
                             .text(subtitle)
-                            .fontSize(12.5f)
-                            .lineHeight(17.0f)
+                            .fontSize(14.5f)
+                            .lineHeight(20.0f)
                             .color(p.mutedText)
                             .build();
                     }
@@ -243,7 +258,7 @@ inline void ActionButton(eui::Ui& ui,
                          ButtonKind kind,
                          std::function<void()> onClick,
                          bool disabled = false,
-                         float fontSize = 13.5f) {
+                         float fontSize = 15.0f) {
     eui::Color normal = p.cardAltBg;
     eui::Color hover = p.tokens.surfaceHover;
     eui::Color pressed = p.tokens.surfaceActive;
@@ -372,15 +387,15 @@ inline void StatusBadge(eui::Ui& ui,
                     if (iconCp != 0) {
                         ui.text(id + ".icon")
                             .icon(iconCp)
-                            .fontSize(12.0f)
-                            .lineHeight(14.0f)
+                            .fontSize(14.0f)
+                            .lineHeight(16.0f)
                             .color(sem.fg)
                             .build();
                     }
                     ui.text(id + ".label")
                         .text(text)
-                        .fontSize(12.5f)
-                        .lineHeight(15.0f)
+                        .fontSize(14.0f)
+                        .lineHeight(18.0f)
                         .fontWeight(600)
                         .color(sem.fg)
                         .build();
@@ -400,11 +415,11 @@ inline void BannerBox(eui::Ui& ui,
                       const std::string& actionLabel = {},
                       std::function<void()> onAction = {}) {
     const bool hasAction = !actionLabel.empty() && static_cast<bool>(onAction);
-    const float insetX = 12.0f;
-    const float insetY = 10.0f;
+    const float insetX = 14.0f;
+    const float insetY = 12.0f;
     const float innerW = std::max(80.0f, width - insetX * 2.0f);
-    const float actionW = hasAction ? 148.0f : 0.0f;
-    const float msgW = std::max(60.0f, innerW - 28.0f - (hasAction ? actionW + 10.0f : 0.0f));
+    const float actionW = hasAction ? 172.0f : 0.0f;
+    const float msgW = std::max(60.0f, innerW - 30.0f - (hasAction ? actionW + 10.0f : 0.0f));
 
     components::card(ui, id)
         .theme(p.tokens)
@@ -423,10 +438,10 @@ inline void BannerBox(eui::Ui& ui,
                 .alignItems(eui::Align::CENTER)
                 .content([&] {
                     ui.text(id + ".icon")
-                        .size(18.0f, 18.0f)
+                        .size(20.0f, 20.0f)
                         .icon(iconCp)
-                        .fontSize(14.0f)
-                        .lineHeight(16.0f)
+                        .fontSize(16.0f)
+                        .lineHeight(18.0f)
                         .color(sem.fg)
                         .horizontalAlign(eui::HorizontalAlign::Center)
                         .verticalAlign(eui::VerticalAlign::Center)
@@ -438,15 +453,15 @@ inline void BannerBox(eui::Ui& ui,
                         .maxWidth(msgW)
                         .wrap(true)
                         .text(message)
-                        .fontSize(13.0f)
-                        .lineHeight(18.0f)
+                        .fontSize(15.0f)
+                        .lineHeight(21.0f)
                         .color(p.text)
                         .build();
 
                     if (hasAction) {
-                        ActionButton(ui, id + ".fix", p, actionW, 30.0f,
+                        ActionButton(ui, id + ".fix", p, actionW, 34.0f,
                                      actionLabel, 0xF0E7u, ButtonKind::InfoAccent,
-                                     std::move(onAction), false, 12.0f);
+                                     std::move(onAction), false, 14.0f);
                     }
                 })
                 .build();

@@ -62,26 +62,26 @@ inline void DrawLinkTypeCard(eui::Ui& ui,
 
             ui.column(id + ".col")
                 .size(width, height)
-                .padding(10.0f, 12.0f, 10.0f, 12.0f)
-                .gap(5.0f)
+                .padding(12.0f, 14.0f, 12.0f, 14.0f)
+                .gap(6.0f)
                 .content([&] {
                     ui.row(id + ".top")
-                        .width(std::max(0.0f, width - 24.0f))
+                        .width(std::max(0.0f, width - 28.0f))
                         .height(eui::SizeValue::wrapContent())
-                        .gap(6.0f)
+                        .gap(8.0f)
                         .alignItems(eui::Align::CENTER)
                         .content([&] {
                             ui.text(id + ".icon")
                                 .icon(spec.icon)
-                                .fontSize(13.0f)
-                                .lineHeight(16.0f)
+                                .fontSize(15.5f)
+                                .lineHeight(20.0f)
                                 .color(selected ? p.accentText : p.mutedText)
                                 .build();
 
                             ui.text(id + ".title")
                                 .text(spec.title)
-                                .fontSize(13.5f)
-                                .lineHeight(17.0f)
+                                .fontSize(15.5f)
+                                .lineHeight(20.0f)
                                 .fontWeight(600)
                                 .color(selected ? p.text : p.text)
                                 .build();
@@ -89,18 +89,18 @@ inline void DrawLinkTypeCard(eui::Ui& ui,
                             ui.row(id + ".spacer").flexGrow(1.0f).height(1.0f).content([] {}).build();
 
                             ui.stack(id + ".pill")
-                                .size(62.0f, 20.0f)
+                                .size(68.0f, 22.0f)
                                 .content([&] {
                                     ui.rect(id + ".pill.bg")
-                                        .size(62.0f, 20.0f)
-                                        .radius(10.0f)
+                                        .size(68.0f, 22.0f)
+                                        .radius(11.0f)
                                         .color(selected ? p.accent : p.tokens.surfaceHover)
                                         .build();
                                     ui.text(id + ".pill.txt")
-                                        .size(62.0f, 20.0f)
+                                        .size(68.0f, 22.0f)
                                         .text(spec.badge)
-                                        .fontSize(10.5f)
-                                        .lineHeight(13.0f)
+                                        .fontSize(12.5f)
+                                        .lineHeight(15.0f)
                                         .fontWeight(600)
                                         .color(selected ? eui::Color{1, 1, 1, 1} : p.mutedText)
                                         .horizontalAlign(eui::HorizontalAlign::Center)
@@ -112,13 +112,13 @@ inline void DrawLinkTypeCard(eui::Ui& ui,
                         .build();
 
                     ui.text(id + ".desc")
-                        .width(std::max(0.0f, width - 24.0f))
+                        .width(std::max(0.0f, width - 28.0f))
                         .height(eui::SizeValue::wrapContent())
-                        .maxWidth(std::max(0.0f, width - 24.0f))
+                        .maxWidth(std::max(0.0f, width - 28.0f))
                         .wrap(true)
                         .text(spec.desc)
-                        .fontSize(12.0f)
-                        .lineHeight(16.0f)
+                        .fontSize(14.0f)
+                        .lineHeight(19.5f)
                         .color(p.mutedText)
                         .build();
                 })
@@ -141,10 +141,10 @@ inline void DrawLeftColumn(eui::Ui& ui, AppState& state, const ui_kit::UiPalette
 
                 components::segmented(ui, "create.opMode")
                     .theme(p.tokens)
-                    .size(innerW, 36.0f)
+                    .size(innerW, 40.0f)
                     .items({"标准创建链接 (Create)", "目录搬家并建链 (Move & Link)"})
                     .selected(state.operationMode == OperationMode::MoveAndLink ? 1 : 0)
-                    .fontSize(13.0f)
+                    .fontSize(14.5f)
                     .transition(p.anim)
                     .onChange([&](int idx) {
                         state.operationMode = (idx == 1) ? OperationMode::MoveAndLink : OperationMode::CreateOnly;
@@ -152,6 +152,7 @@ inline void DrawLeftColumn(eui::Ui& ui, AppState& state, const ui_kit::UiPalette
                             !win::IsDirectoryTargetRequired(state.linkType)) {
                             state.linkType = LinkType::Junction;
                         }
+                        actions::MarkValidationDirty(state);
                     })
                     .build();
 
@@ -168,7 +169,7 @@ inline void DrawLeftColumn(eui::Ui& ui, AppState& state, const ui_kit::UiPalette
 
                 const float cardGap = 10.0f;
                 const float cardW = std::max(140.0f, (innerW - cardGap) * 0.5f);
-                const float cardH = 82.0f;
+                const float cardH = 98.0f;
 
                 ui.row("create.types.r0")
                     .width(innerW)
@@ -180,6 +181,7 @@ inline void DrawLeftColumn(eui::Ui& ui, AppState& state, const ui_kit::UiPalette
                             DrawLinkTypeCard(ui, "create.type." + std::to_string(i), p, cardW, cardH, s,
                                              state.linkType == s.type, [&state, t = s.type] {
                                                  state.linkType = t;
+                                                 actions::MarkValidationDirty(state);
                                                  actions::PersistSettings(state);
                                              });
                         }
@@ -196,6 +198,7 @@ inline void DrawLeftColumn(eui::Ui& ui, AppState& state, const ui_kit::UiPalette
                             DrawLinkTypeCard(ui, "create.type." + std::to_string(i), p, cardW, cardH, s,
                                              state.linkType == s.type, [&state, t = s.type] {
                                                  state.linkType = t;
+                                                 actions::MarkValidationDirty(state);
                                                  actions::PersistSettings(state);
                                              });
                         }
@@ -218,78 +221,89 @@ inline void DrawLeftColumn(eui::Ui& ui, AppState& state, const ui_kit::UiPalette
                     .text(isMoveMode
                               ? "现有源目录（将被整体迁移走，并在原地建链）"
                               : "链接路径 Link（即将新生成的虚拟入口，当前应不存在）")
-                    .fontSize(13.0f)
-                    .lineHeight(18.0f)
+                    .fontSize(15.0f)
+                    .lineHeight(20.0f)
                     .fontWeight(600)
                     .color(p.text)
                     .build();
 
-                const float btnW = 68.0f;
+                const float btnW = 78.0f;
                 const float btnGap = 6.0f;
                 const float inputW = std::max(140.0f, innerW - btnW * 2.0f - btnGap * 2.0f);
 
                 ui.row("create.linkRow")
                     .width(innerW)
-                    .height(38.0f)
+                    .height(42.0f)
                     .gap(btnGap)
                     .alignItems(eui::Align::CENTER)
                     .content([&] {
                         components::input(ui, "create.linkInput")
                             .theme(p.tokens)
-                            .size(inputW, 38.0f)
-                            .fontSize(13.5f)
+                            .size(inputW, 42.0f)
+                            .fontSize(15.5f)
                             .value(state.linkPath)
                             .placeholder(isMoveMode
                                              ? "例如 C:\\Users\\Me\\AppData\\Local\\LargeApp"
                                              : "例如 C:\\Work\\ShortcutLink")
                             .onChange([&](const std::string& v) {
                                 state.linkPath = NormalizePastedInput(v);
+                                actions::MarkValidationDirty(state);
                             })
                             .onEnter([&] {
                                 actions::ExecuteOrConfirmCreate(state);
                             })
                             .build();
 
-                        ui_kit::ActionButton(ui, "create.linkPick", p, btnW, 38.0f,
+                        ui_kit::ActionButton(ui, "create.linkPick", p, btnW, 42.0f,
                                              isMoveMode ? "选目录" : "选位置",
                                              isMoveMode ? 0xF07Bu : 0xF067u,
                                              ui_kit::ButtonKind::Secondary,
                                              [&] {
                                                  if (isMoveMode) {
                                                      auto chosen = win::BrowseDirectory("选择要迁移的现有源文件夹", state.linkPath);
-                                                     if (!chosen.empty()) state.linkPath = win::CleanPathInput(chosen);
+                                                     if (!chosen.empty()) {
+                                                         state.linkPath = win::CleanPathInput(chosen);
+                                                         actions::MarkValidationDirty(state);
+                                                     }
                                                  } else {
                                                      std::string chosen;
                                                      if (win::ChooseNewLinkPath(chosen, wantsDir)) {
                                                          state.linkPath = win::CleanPathInput(chosen);
+                                                         actions::MarkValidationDirty(state);
                                                      }
                                                  }
                                              },
-                                             false, 12.5f);
+                                             false, 14.0f);
 
-                        ui_kit::ActionButton(ui, "create.linkPaste", p, btnW, 38.0f,
+                        ui_kit::ActionButton(ui, "create.linkPaste", p, btnW, 42.0f,
                                              "粘贴", 0xF0EAu, ui_kit::ButtonKind::Secondary,
                                              [&] {
                                                  const std::string clip = win::CleanPathInput(win::ReadTextFromClipboard());
-                                                 if (!clip.empty()) state.linkPath = clip;
+                                                 if (!clip.empty()) {
+                                                     state.linkPath = clip;
+                                                     actions::MarkValidationDirty(state);
+                                                 }
                                              },
-                                             false, 12.5f);
+                                             false, 14.0f);
                     })
                     .build();
 
                 // Utility row between Link & Target
                 ui.row("create.midTools")
                     .width(innerW)
-                    .height(30.0f)
+                    .height(34.0f)
                     .gap(8.0f)
                     .alignItems(eui::Align::CENTER)
                     .content([&] {
-                        ui_kit::ActionButton(ui, "create.swapBtn", p, 98.0f, 30.0f,
+                        ui_kit::ActionButton(ui, "create.swapBtn", p, 110.0f, 34.0f,
                                              "互换路径", 0xF362u, ui_kit::ButtonKind::Subtle,
-                                             [&] { std::swap(state.linkPath, state.targetPath); },
-                                             false, 12.0f);
+                                             [&] {
+                                                 std::swap(state.linkPath, state.targetPath);
+                                                 actions::MarkValidationDirty(state);
+                                             },
+                                             false, 13.5f);
 
-                        ui_kit::ActionButton(ui, "create.appendBtn", p, 124.0f, 30.0f,
+                        ui_kit::ActionButton(ui, "create.appendBtn", p, 138.0f, 34.0f,
                                              isMoveMode ? "目标追加原名" : "链接追加目标名",
                                              0xF067u, ui_kit::ButtonKind::Subtle,
                                              [&] {
@@ -297,19 +311,20 @@ inline void DrawLeftColumn(eui::Ui& ui, AppState& state, const ui_kit::UiPalette
                                                      ? FixAction::AppendLinkFolderNameToTarget
                                                      : FixAction::AppendTargetNameToLink);
                                              },
-                                             false, 12.0f);
+                                             false, 13.5f);
 
                         ui.row("create.midTools.sp").flexGrow(1.0f).height(1.0f).content([] {}).build();
 
                         components::toggleSwitch(ui, "create.autoParent")
                             .theme(p.tokens)
-                            .size(164.0f, 26.0f)
+                            .size(182.0f, 30.0f)
                             .checked(state.autoCreateParent)
                             .text("自动创建父目录")
-                            .fontSize(12.5f)
+                            .fontSize(14.5f)
                             .transition(p.anim)
                             .onChange([&](bool v) {
                                 state.autoCreateParent = v;
+                                actions::MarkValidationDirty(state);
                                 actions::PersistSettings(state);
                             })
                             .build();
@@ -321,37 +336,38 @@ inline void DrawLeftColumn(eui::Ui& ui, AppState& state, const ui_kit::UiPalette
                     .text(isMoveMode
                               ? "迁入新目标（Target — 迁移后的最终保存路径，应尚不存在）"
                               : "真实目标 Target（数据实际所在的现有文件或文件夹）")
-                    .fontSize(13.0f)
-                    .lineHeight(18.0f)
+                    .fontSize(15.0f)
+                    .lineHeight(20.0f)
                     .fontWeight(600)
                     .color(p.text)
                     .build();
 
-                const float tBtnW = 64.0f;
+                const float tBtnW = 70.0f;
                 const float tInputW = std::max(130.0f, innerW - tBtnW * 3.0f - btnGap * 3.0f);
                 ui.row("create.targetRow")
                     .width(innerW)
-                    .height(38.0f)
+                    .height(42.0f)
                     .gap(btnGap)
                     .alignItems(eui::Align::CENTER)
                     .content([&] {
                         components::input(ui, "create.targetInput")
                             .theme(p.tokens)
-                            .size(tInputW, 38.0f)
-                            .fontSize(13.5f)
+                            .size(tInputW, 42.0f)
+                            .fontSize(15.5f)
                             .value(state.targetPath)
                             .placeholder(isMoveMode
                                              ? "例如 D:\\MovedApps\\LargeApp"
                                              : "例如 D:\\RealStorage\\Assets")
                             .onChange([&](const std::string& v) {
                                 state.targetPath = NormalizePastedInput(v);
+                                actions::MarkValidationDirty(state);
                             })
                             .onEnter([&] {
                                 actions::ExecuteOrConfirmCreate(state);
                             })
                             .build();
 
-                        ui_kit::ActionButton(ui, "create.targetDirPick", p, tBtnW, 38.0f,
+                        ui_kit::ActionButton(ui, "create.targetDirPick", p, tBtnW, 42.0f,
                                              isMoveMode ? "选母盘" : "文件夹",
                                              0xF07Cu, ui_kit::ButtonKind::Secondary,
                                              [&] {
@@ -365,11 +381,12 @@ inline void DrawLeftColumn(eui::Ui& ui, AppState& state, const ui_kit::UiPalette
                                                          }
                                                      }
                                                      state.targetPath = std::move(clean);
+                                                     actions::MarkValidationDirty(state);
                                                  }
                                              },
-                                             false, 12.0f);
+                                             false, 13.5f);
 
-                        ui_kit::ActionButton(ui, "create.targetFilePick", p, tBtnW, 38.0f,
+                        ui_kit::ActionButton(ui, "create.targetFilePick", p, tBtnW, 42.0f,
                                              isMoveMode ? "选新址" : "选文件",
                                              0xF15Bu, ui_kit::ButtonKind::Secondary,
                                              [&] {
@@ -377,21 +394,28 @@ inline void DrawLeftColumn(eui::Ui& ui, AppState& state, const ui_kit::UiPalette
                                                      std::string chosen;
                                                      if (win::ChooseNewLinkPath(chosen, true)) {
                                                          state.targetPath = win::CleanPathInput(chosen);
+                                                         actions::MarkValidationDirty(state);
                                                      }
                                                  } else {
                                                      auto chosen = win::BrowseFile("选择目标文件", state.targetPath);
-                                                     if (!chosen.empty()) state.targetPath = win::CleanPathInput(chosen);
+                                                     if (!chosen.empty()) {
+                                                         state.targetPath = win::CleanPathInput(chosen);
+                                                         actions::MarkValidationDirty(state);
+                                                     }
                                                  }
                                              },
-                                             false, 12.0f);
+                                             false, 13.5f);
 
-                        ui_kit::ActionButton(ui, "create.targetPaste", p, tBtnW, 38.0f,
+                        ui_kit::ActionButton(ui, "create.targetPaste", p, tBtnW, 42.0f,
                                              "粘贴", 0xF0EAu, ui_kit::ButtonKind::Secondary,
                                              [&] {
                                                  const std::string clip = win::CleanPathInput(win::ReadTextFromClipboard());
-                                                 if (!clip.empty()) state.targetPath = clip;
+                                                 if (!clip.empty()) {
+                                                     state.targetPath = clip;
+                                                     actions::MarkValidationDirty(state);
+                                                 }
                                              },
-                                             false, 12.0f);
+                                             false, 13.5f);
                     })
                     .build();
             });
@@ -400,7 +424,7 @@ inline void DrawLeftColumn(eui::Ui& ui, AppState& state, const ui_kit::UiPalette
 }
 
 inline void DrawRightColumn(eui::Ui& ui, AppState& state, const ui_kit::UiPalette& p, float colW) {
-    const ValidationResult val = win::ValidateCreateInputs(state);
+    const ValidationResult& val = actions::EnsureValidation(state);
     const bool busy = app::async::running("fl.create");
 
     int valTone = 0;
@@ -456,25 +480,25 @@ inline void DrawRightColumn(eui::Ui& ui, AppState& state, const ui_kit::UiPalett
                             .content([&] {
                                 ui.row("create.cmdBox.top")
                                     .width(cmdInnerW)
-                                    .height(24.0f)
+                                    .height(28.0f)
                                     .alignItems(eui::Align::CENTER)
                                     .content([&] {
                                         ui.text("create.cmdBox.lbl")
                                             .text("GENERATED COMMAND")
-                                            .fontSize(11.0f)
-                                            .lineHeight(14.0f)
+                                            .fontSize(13.0f)
+                                            .lineHeight(16.0f)
                                             .fontWeight(700)
                                             .color(p.subtleText)
                                             .build();
                                         ui.row("create.cmdBox.sp").flexGrow(1.0f).height(1.0f).content([] {}).build();
-                                        ui_kit::ActionButton(ui, "create.copyCmd", p, 84.0f, 24.0f,
+                                        ui_kit::ActionButton(ui, "create.copyCmd", p, 96.0f, 28.0f,
                                                              "复制命令", 0xF0C5u, ui_kit::ButtonKind::Subtle,
                                                              [&] {
                                                                  if (win::CopyTextToClipboard(win::BuildMklinkCommand(state.linkType, state.linkPath, state.targetPath))) {
                                                                      ui_kit::TriggerToast(state, "已复制到剪贴板", "mklink 命令行已准备就绪。", 1, 0xF0C5u);
                                                                  }
                                                              },
-                                                             false, 11.5f);
+                                                             false, 13.0f);
                                     })
                                     .build();
 
@@ -484,8 +508,8 @@ inline void DrawRightColumn(eui::Ui& ui, AppState& state, const ui_kit::UiPalett
                                     .maxWidth(cmdInnerW)
                                     .wrap(true)
                                     .fontFamily("monospace")
-                                    .fontSize(12.5f)
-                                    .lineHeight(19.0f)
+                                    .fontSize(14.5f)
+                                    .lineHeight(21.0f)
                                     .color(p.consoleText)
                                     .text(cmdPreview)
                                     .build();
@@ -495,7 +519,7 @@ inline void DrawRightColumn(eui::Ui& ui, AppState& state, const ui_kit::UiPalett
                     .build();
 
                 // Primary Action Row
-                const float clearW = 104.0f;
+                const float clearW = 114.0f;
                 const float execW = std::max(160.0f, innerW - clearW - 10.0f);
                 const std::string primaryLabel = busy
                     ? "正在执行..."
@@ -505,16 +529,16 @@ inline void DrawRightColumn(eui::Ui& ui, AppState& state, const ui_kit::UiPalett
 
                 ui.row("create.actionRow")
                     .width(innerW)
-                    .height(42.0f)
+                    .height(46.0f)
                     .gap(10.0f)
                     .content([&] {
-                        ui_kit::ActionButton(ui, "create.executeBtn", p, execW, 42.0f,
+                        ui_kit::ActionButton(ui, "create.executeBtn", p, execW, 46.0f,
                                              primaryLabel, busy ? 0xF021u : 0xF04Bu,
                                              ui_kit::ButtonKind::Primary,
                                              [&] { actions::ExecuteOrConfirmCreate(state); },
-                                             !val.canExecute || busy, 14.0f);
+                                             !val.canExecute || busy, 15.5f);
 
-                        ui_kit::ActionButton(ui, "create.resetBtn", p, clearW, 42.0f,
+                        ui_kit::ActionButton(ui, "create.resetBtn", p, clearW, 46.0f,
                                              "重置输入", 0xF021u,
                                              ui_kit::ButtonKind::Secondary,
                                              [&] {
@@ -523,8 +547,9 @@ inline void DrawRightColumn(eui::Ui& ui, AppState& state, const ui_kit::UiPalett
                                                  state.statusText = "就绪";
                                                  state.statusTone = 0;
                                                  state.consoleOutput.clear();
+                                                 actions::MarkValidationDirty(state);
                                              },
-                                             busy, 13.0f);
+                                             busy, 14.5f);
                     })
                     .build();
             });
@@ -538,13 +563,13 @@ inline void DrawRightColumn(eui::Ui& ui, AppState& state, const ui_kit::UiPalett
                     .content([&] {
                         ui.text("create.outTitle")
                             .text("执行状态与终端回显")
-                            .fontSize(15.5f)
-                            .lineHeight(20.0f)
+                            .fontSize(17.5f)
+                            .lineHeight(22.0f)
                             .fontWeight(600)
                             .color(p.text)
                             .build();
                         ui.row("create.outSp").flexGrow(1.0f).height(1.0f).content([] {}).build();
-                        ui_kit::StatusBadge(ui, "create.statusBadge", p, 142.0f, 26.0f,
+                        ui_kit::StatusBadge(ui, "create.statusBadge", p, 152.0f, 28.0f,
                                             state.statusText,
                                             state.statusTone == 1 ? 0xF058u : (state.statusTone == 3 ? 0xF057u : 0xF05Au),
                                             ui_kit::ToneColors(p, state.statusTone));
@@ -557,10 +582,10 @@ inline void DrawRightColumn(eui::Ui& ui, AppState& state, const ui_kit::UiPalett
 
                 ui.stack("create.consoleBox")
                     .width(innerW)
-                    .height(148.0f)
+                    .height(164.0f)
                     .content([&] {
                         ui.rect("create.consoleBox.bg")
-                            .size(innerW, 148.0f)
+                            .size(innerW, 164.0f)
                             .color(p.consoleBg)
                             .radius(10.0f)
                             .border(1.0f, p.border)
@@ -568,12 +593,12 @@ inline void DrawRightColumn(eui::Ui& ui, AppState& state, const ui_kit::UiPalett
                         ui.text("create.consoleText")
                             .x(12.0f)
                             .y(10.0f)
-                            .size(std::max(80.0f, innerW - 24.0f), 128.0f)
+                            .size(std::max(80.0f, innerW - 24.0f), 144.0f)
                             .maxWidth(std::max(80.0f, innerW - 24.0f))
                             .wrap(true)
                             .fontFamily("monospace")
-                            .fontSize(12.5f)
-                            .lineHeight(18.0f)
+                            .fontSize(14.5f)
+                            .lineHeight(20.5f)
                             .color(state.consoleOutput.empty() ? p.subtleText : p.consoleText)
                             .text(outputDisplay)
                             .build();
@@ -583,27 +608,27 @@ inline void DrawRightColumn(eui::Ui& ui, AppState& state, const ui_kit::UiPalett
                 const bool hasLink = !win::CleanPathInput(state.linkPath).empty();
                 ui.row("create.quickFooter")
                     .width(innerW)
-                    .height(32.0f)
+                    .height(36.0f)
                     .gap(8.0f)
                     .content([&] {
-                        ui_kit::ActionButton(ui, "create.openLinkDir", p, 134.0f, 32.0f,
+                        ui_kit::ActionButton(ui, "create.openLinkDir", p, 148.0f, 36.0f,
                                              "在资源管理器定位", 0xF07Cu,
                                              ui_kit::ButtonKind::Secondary,
                                              [&] { win::RevealInExplorer(state.linkPath); },
-                                             !hasLink, 12.0f);
+                                             !hasLink, 13.5f);
 
-                        ui_kit::ActionButton(ui, "create.inspectJump", p, 124.0f, 32.0f,
+                        ui_kit::ActionButton(ui, "create.inspectJump", p, 132.0f, 36.0f,
                                              "去体检该链接", 0xF002u,
                                              ui_kit::ButtonKind::InfoAccent,
                                              [&] {
                                                  actions::InspectPathNow(state, state.linkPath);
                                                  state.activeTab = 1;
                                              },
-                                             !hasLink, 12.0f);
+                                             !hasLink, 13.5f);
 
                         ui.row("create.qfSp").flexGrow(1.0f).height(1.0f).content([] {}).build();
 
-                        ui_kit::ActionButton(ui, "create.copyOut", p, 92.0f, 32.0f,
+                        ui_kit::ActionButton(ui, "create.copyOut", p, 96.0f, 36.0f,
                                              "复制回显", 0xF0C5u,
                                              ui_kit::ButtonKind::Subtle,
                                              [&] {
@@ -611,7 +636,7 @@ inline void DrawRightColumn(eui::Ui& ui, AppState& state, const ui_kit::UiPalett
                                                      ui_kit::TriggerToast(state, "已复制", "终端输出内容已复制到剪贴板。", 1, 0xF0C5u);
                                                  }
                                              },
-                                             state.consoleOutput.empty(), 12.0f);
+                                             state.consoleOutput.empty(), 13.5f);
                     })
                     .build();
             });
@@ -626,17 +651,30 @@ inline void ComposeCreatePage(eui::Ui& ui,
                               const ui_kit::UiPalette& p,
                               float width,
                               float height) {
+    const ValidationResult& val = actions::EnsureValidation(state);
+    const std::string scrollKey =
+        std::to_string(static_cast<int>(state.operationMode)) + ":" +
+        std::to_string(static_cast<int>(val.level)) + ":" +
+        std::to_string(static_cast<int>(val.quickFix)) + ":" +
+        std::to_string(val.message.size()) + ":" +
+        std::to_string(state.linkPath.size()) + ":" +
+        std::to_string(state.targetPath.size()) + ":" +
+        std::to_string(state.consoleOutput.size());
+
     components::scrollView(ui, "page.create.scroll")
         .theme(p.tokens)
         .size(width, height)
         .offset(state.createScrollOffset)
+        .step(64.0f)
         .gap(16.0f)
+        .transition(0.08f, eui::Ease::OutCubic)
+        .contentKey(scrollKey)
         .onChange([&](float offset) { state.createScrollOffset = offset; })
         .content([&](eui::Ui& innerUi, float innerW, float /*viewportH*/) {
-            const bool twoCols = innerW >= 920.0f;
+            const bool twoCols = innerW >= 980.0f;
             if (twoCols) {
                 const float gap = 16.0f;
-                const float leftW = std::floor((innerW - gap) * 0.54f);
+                const float leftW = std::floor((innerW - gap) * 0.53f);
                 const float rightW = std::max(260.0f, innerW - gap - leftW);
                 innerUi.row("create.twoCols")
                     .width(innerW)

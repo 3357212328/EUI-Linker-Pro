@@ -32,6 +32,19 @@ inline void PersistSettings(const AppState& state) {
 inline void RefreshPrivileges(AppState& state) {
     state.isAdmin = win::IsRunningAsAdmin();
     state.isDevMode = win::IsDeveloperModeEnabled();
+    state.validationDirty = true;
+}
+
+inline const ValidationResult& EnsureValidation(AppState& state) {
+    if (state.validationDirty) {
+        state.cachedValidation = win::ValidateCreateInputs(state);
+        state.validationDirty = false;
+    }
+    return state.cachedValidation;
+}
+
+inline void MarkValidationDirty(AppState& state) {
+    state.validationDirty = true;
 }
 
 inline void RebuildHistoryTable(AppState& state) {
@@ -190,6 +203,7 @@ inline void LaunchCreateExecution(AppState& state, OperationMode mode, LinkType 
                 (r.output.empty() ? "(无控制台输出)" : r.output);
 
             RecordOperationResult(*statePtr, r);
+            MarkValidationDirty(*statePtr);
 
             if (r.success) {
                 if (mode == OperationMode::MoveAndLink) {
@@ -273,6 +287,7 @@ inline void ApplyQuickFix(AppState& state, FixAction action) {
         case FixAction::None:
             break;
     }
+    MarkValidationDirty(state);
 }
 
 inline void InspectPathNow(AppState& state, const std::string& rawPath) {

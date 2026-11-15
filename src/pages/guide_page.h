@@ -34,17 +34,17 @@ inline void DrawMatrixRow(eui::Ui& ui,
                           const std::string& c3,
                           const std::string& c4) {
     const float innerW = std::max(80.0f, width - 24.0f);
-    const float w0 = 130.0f;
-    const float w1 = 80.0f;
-    const float w2 = 100.0f;
-    const float w3 = 120.0f;
-    const float w4 = std::max(100.0f, innerW - w0 - w1 - w2 - w3 - 32.0f);
+    const float w0 = 152.0f;
+    const float w1 = 92.0f;
+    const float w2 = 126.0f;
+    const float w3 = 142.0f;
+    const float w4 = std::max(120.0f, innerW - w0 - w1 - w2 - w3 - 32.0f);
 
     components::card(ui, id)
         .theme(p.tokens)
         .width(width)
         .wrapContentHeight()
-        .padding(10.0f)
+        .padding(12.0f)
         .color(isHeader ? p.tokens.surfaceHover : p.cardAltBg)
         .radius(8.0f)
         .border(1.0f, p.border)
@@ -63,8 +63,8 @@ inline void DrawMatrixRow(eui::Ui& ui,
                             .maxWidth(cw)
                             .wrap(true)
                             .text(text)
-                            .fontSize(12.5f)
-                            .lineHeight(17.0f)
+                            .fontSize(14.5f)
+                            .lineHeight(20.5f)
                             .fontWeight(bold ? 600 : 400)
                             .color(col)
                             .build();
@@ -87,11 +87,19 @@ inline void ComposeGuidePage(eui::Ui& ui,
                              const ui_kit::UiPalette& p,
                              float width,
                              float height) {
+    const std::string scrollKey =
+        std::string("guide:") +
+        std::to_string(state.isAdmin ? 1 : 0) + ":" +
+        std::to_string(state.isDevMode ? 1 : 0);
+
     components::scrollView(ui, "page.guide.scroll")
         .theme(p.tokens)
         .size(width, height)
         .offset(state.guideScrollOffset)
+        .step(64.0f)
         .gap(14.0f)
+        .transition(0.08f, eui::Ease::OutCubic)
+        .contentKey(scrollKey)
         .onChange([&](float offset) { state.guideScrollOffset = offset; })
         .content([&](eui::Ui& innerUi, float innerW, float /*viewportH*/) {
             innerUi.column("guide.col")
@@ -105,55 +113,78 @@ inline void ComposeGuidePage(eui::Ui& ui,
                                               "Windows 权限与环境诊断",
                                               "查看当前权限对 /D、文件符号链接的支持情况，并可一键开启开发者模式或提权重启");
 
-                        innerUi.row("guide.envRow")
-                            .width(cardW)
-                            .height(36.0f)
-                            .gap(10.0f)
-                            .alignItems(eui::Align::CENTER)
-                            .content([&] {
-                                ui_kit::StatusBadge(innerUi, "guide.adminStatus", p, 178.0f, 30.0f,
-                                                    state.isAdmin ? "已获取管理员权限" : "当前为标准用户权限",
-                                                    0xF3EDu,
-                                                    state.isAdmin ? p.success : p.warning);
+                        auto drawStatusBadges = [&] {
+                            ui_kit::StatusBadge(innerUi, "guide.adminStatus", p, 204.0f, 32.0f,
+                                                state.isAdmin ? "已获取管理员权限" : "当前为标准用户权限",
+                                                0xF3EDu,
+                                                state.isAdmin ? p.success : p.warning);
 
-                                ui_kit::StatusBadge(innerUi, "guide.devStatus", p, 198.0f, 30.0f,
-                                                    state.isDevMode ? "开发者模式：已开启" : "开发者模式：未开启",
-                                                    0xF013u,
-                                                    state.isDevMode ? p.success : p.info);
+                            ui_kit::StatusBadge(innerUi, "guide.devStatus", p, 222.0f, 32.0f,
+                                                state.isDevMode ? "开发者模式：已开启" : "开发者模式：未开启",
+                                                0xF013u,
+                                                state.isDevMode ? p.success : p.info);
+                        };
 
-                                innerUi.row("guide.envSp").flexGrow(1.0f).height(1.0f).content([] {}).build();
+                        auto drawEnvButtons = [&] {
+                            ui_kit::ActionButton(innerUi, "guide.devBtn", p, 168.0f, 38.0f,
+                                                 "打开系统开发者设置", 0xF08Eu, ui_kit::ButtonKind::Secondary,
+                                                 [&] {
+                                                     win::OpenWindowsDeveloperSettings();
+                                                     ui_kit::TriggerToast(state, "已打开设置", "请在系统设置中启用“开发人员模式”，之后点刷新状态即可生效。", 0, 0xF05Au);
+                                                 },
+                                                 false, 14.0f);
 
-                                ui_kit::ActionButton(innerUi, "guide.devBtn", p, 152.0f, 34.0f,
-                                                     "打开系统开发者设置", 0xF08Eu, ui_kit::ButtonKind::Secondary,
-                                                     [&] {
-                                                         win::OpenWindowsDeveloperSettings();
-                                                         ui_kit::TriggerToast(state, "已打开设置", "请在系统设置中启用“开发人员模式”，之后点刷新状态即可生效。", 0, 0xF05Au);
-                                                     },
-                                                     false, 12.0f);
+                            ui_kit::ActionButton(innerUi, "guide.refreshEnvBtn", p, 108.0f, 38.0f,
+                                                 "刷新状态", 0xF021u, ui_kit::ButtonKind::Subtle,
+                                                 [&] {
+                                                     actions::RefreshPrivileges(state);
+                                                     ui_kit::TriggerToast(state, "环境已刷新",
+                                                                          state.isDevMode ? "检测到开发者模式已开启。" : "权限状态已更新。",
+                                                                          0, 0xF021u);
+                                                 },
+                                                 false, 14.0f);
 
-                                ui_kit::ActionButton(innerUi, "guide.refreshEnvBtn", p, 92.0f, 34.0f,
-                                                     "刷新状态", 0xF021u, ui_kit::ButtonKind::Subtle,
-                                                     [&] {
-                                                         actions::RefreshPrivileges(state);
-                                                         ui_kit::TriggerToast(state, "环境已刷新",
-                                                                              state.isDevMode ? "检测到开发者模式已开启。" : "权限状态已更新。",
-                                                                              0, 0xF021u);
-                                                     },
-                                                     false, 12.0f);
+                            ui_kit::ActionButton(innerUi, "guide.elevateBtn", p, 160.0f, 38.0f,
+                                                 state.isAdmin ? "已处管理员模式" : "以管理员身份重启",
+                                                 0xF3EDu, ui_kit::ButtonKind::Primary,
+                                                 [&] {
+                                                     if (win::RelaunchAsAdmin()) {
+                                                         std::exit(0);
+                                                     } else {
+                                                         ui_kit::TriggerToast(state, "未完成提权", "用户取消了 UAC 权限提示，当前维持原权限运行。", 2, 0xF071u);
+                                                     }
+                                                 },
+                                                 state.isAdmin, 14.0f);
+                        };
 
-                                ui_kit::ActionButton(innerUi, "guide.elevateBtn", p, 138.0f, 34.0f,
-                                                     state.isAdmin ? "已处管理员模式" : "以管理员身份重启",
-                                                     0xF3EDu, ui_kit::ButtonKind::Primary,
-                                                     [&] {
-                                                         if (win::RelaunchAsAdmin()) {
-                                                             std::exit(0);
-                                                         } else {
-                                                             ui_kit::TriggerToast(state, "未完成提权", "用户取消了 UAC 权限提示，当前维持原权限运行。", 2, 0xF071u);
-                                                         }
-                                                     },
-                                                     state.isAdmin, 12.0f);
-                            })
-                            .build();
+                        if (cardW >= 920.0f) {
+                            innerUi.row("guide.envRow")
+                                .width(cardW)
+                                .height(38.0f)
+                                .gap(10.0f)
+                                .alignItems(eui::Align::CENTER)
+                                .content([&] {
+                                    drawStatusBadges();
+                                    innerUi.row("guide.envSp").flexGrow(1.0f).height(1.0f).content([] {}).build();
+                                    drawEnvButtons();
+                                })
+                                .build();
+                        } else {
+                            innerUi.row("guide.envBadgesRow")
+                                .width(cardW)
+                                .height(34.0f)
+                                .gap(10.0f)
+                                .alignItems(eui::Align::CENTER)
+                                .content(drawStatusBadges)
+                                .build();
+                            innerUi.row("guide.envBtnsRow")
+                                .width(cardW)
+                                .height(38.0f)
+                                .gap(10.0f)
+                                .alignItems(eui::Align::CENTER)
+                                .content(drawEnvButtons)
+                                .build();
+                        }
                     });
 
                     // 2. Link Types Comparison Matrix
@@ -198,21 +229,21 @@ inline void ComposeGuidePage(eui::Ui& ui,
                         ui_kit::SectionCard(innerUi, "guide.faq." + std::to_string(i), p, innerW, 18.0f, 10.0f, [&](float cardW) {
                             innerUi.row("guide.faq." + std::to_string(i) + ".hdr")
                                 .width(cardW)
-                                .height(28.0f)
+                                .height(32.0f)
                                 .gap(10.0f)
                                 .alignItems(eui::Align::CENTER)
                                 .content([&] {
                                     innerUi.text("guide.faq." + std::to_string(i) + ".icon")
                                         .icon(c.icon)
-                                        .fontSize(15.0f)
-                                        .lineHeight(18.0f)
+                                        .fontSize(17.5f)
+                                        .lineHeight(21.0f)
                                         .color(ui_kit::ToneColors(p, c.tone).fg)
                                         .build();
 
                                     innerUi.text("guide.faq." + std::to_string(i) + ".title")
                                         .text(c.title)
-                                        .fontSize(15.0f)
-                                        .lineHeight(20.0f)
+                                        .fontSize(17.5f)
+                                        .lineHeight(22.0f)
                                         .fontWeight(600)
                                         .color(p.text)
                                         .build();
@@ -220,7 +251,7 @@ inline void ComposeGuidePage(eui::Ui& ui,
                                     innerUi.row("guide.faq." + std::to_string(i) + ".sp").flexGrow(1.0f).height(1.0f).content([] {}).build();
 
                                     ui_kit::StatusBadge(innerUi, "guide.faq." + std::to_string(i) + ".badge",
-                                                        p, 84.0f, 24.0f, c.badge, 0, ui_kit::ToneColors(p, c.tone));
+                                                        p, 96.0f, 28.0f, c.badge, 0, ui_kit::ToneColors(p, c.tone));
                                 })
                                 .build();
 
@@ -230,8 +261,8 @@ inline void ComposeGuidePage(eui::Ui& ui,
                                 .maxWidth(cardW)
                                 .wrap(true)
                                 .text(c.body)
-                                .fontSize(13.0f)
-                                .lineHeight(20.0f)
+                                .fontSize(15.0f)
+                                .lineHeight(23.0f)
                                 .color(p.mutedText)
                                 .build();
                         });

@@ -111,6 +111,10 @@ struct AppState {
     int statusTone = 0; // 0=neutral, 1=success, 2=warning, 3=error
     std::string consoleOutput;
 
+    // Validation cache (avoids running filesystem syscalls on every compose/scroll frame)
+    ValidationResult cachedValidation;
+    bool validationDirty = true;
+
     // Privilege cache
     bool isAdmin = false;
     bool isDevMode = false;
