@@ -1,0 +1,200 @@
+import { Palette } from "std-widgets.slint";
+
+export struct InspectItemUi {
+    path: string,
+    kind-code: string,
+    kind-label: string,
+    target-path: string,
+    detail-note: string,
+    target-healthy: bool,
+    is-reparse: bool,
+    is-relative: bool,
+    hard-link-count: int,
+}
+
+export struct HistoryItemUi {
+    source-index: int,
+    timestamp: string,
+    type-code: string,
+    link-path: string,
+    target-path: string,
+    result: string,
+    success: bool,
+}
+
+export global Theme {
+    in-out property <bool> is-dark: true;
+    out property <bool> dark: root.is-dark;
+
+    // Surface Hierarchy
+    out property <color> bg-canvas: dark ? #111318 : #f4f6fa;
+    out property <color> bg-sidebar: dark ? #171a21 : #ebeff5;
+    out property <color> bg-card: dark ? #1c2029 : #ffffff;
+    out property <color> bg-card-hover: dark ? #222733 : #f8fafe;
+    out property <color> bg-subtle: dark ? #151820 : #f0f3f8;
+    out property <color> bg-code: dark ? #0d1016 : #f1f4f9;
+    out property <color> bg-backdrop: #0000008c;
+
+    // Hairline Borders
+    out property <color> border: dark ? #2b3140 : #dce2ec;
+    out property <color> border-strong: dark ? #3b4459 : #c2ccd9;
+
+    // Typography
+    out property <color> text-primary: dark ? #f0f3f8 : #151922;
+    out property <color> text-secondary: dark ? #a6b0c3 : #525e72;
+    out property <color> text-muted: dark ? #737e93 : #7c879b;
+
+    // Brand Accent (Windows Fluent Blue)
+    out property <color> accent: dark ? #4ea1ff : #0067c0;
+    out property <color> accent-hover: dark ? #6bb2ff : #0056a3;
+    out property <color> accent-soft: dark ? #4ea1ff22 : #0067c018;
+    out property <color> accent-border: dark ? #4ea1ff55 : #0067c04d;
+    out property <color> accent-on: #ffffff;
+
+    // Semantic Status Colors
+    out property <color> success-fg: dark ? #4ade80 : #15803d;
+    out property <color> success-bg: dark ? #22c55e20 : #16a34a16;
+    out property <color> success-bd: dark ? #22c55e4d : #16a34a40;
+
+    out property <color> warning-fg: dark ? #fbbf24 : #b45309;
+    out property <color> warning-bg: dark ? #f59e0b20 : #d9770616;
+    out property <color> warning-bd: dark ? #f59e0b4d : #d9770640;
+
+    out property <color> danger-fg: dark ? #f87171 : #b91c1c;
+    out property <color> danger-bg: dark ? #ef444420 : #dc262616;
+    out property <color> danger-bd: dark ? #ef44444d : #dc262640;
+
+    out property <color> info-fg: dark ? #60a5fa : #0369a1;
+    out property <color> info-bg: dark ? #3b82f620 : #0284c714;
+    out property <color> info-bd: dark ? #3b82f64d : #0284c73d;
+}
+
+export global Icons {
+    // 24x24 Material / Fluent clean SVG path data
+    out property <string> add-link: "M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z";
+    out property <string> search: "M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z";
+    out property <string> history: "M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z";
+    out property <string> shield: "M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 14l-3.5-3.5 1.41-1.41L11 12.17l4.59-4.58L17 9l-6 6z";
+    out property <string> sun: "M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 0 0-1.41 0 .996.996 0 0 0 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37a.996.996 0 0 0-1.41 0 .996.996 0 0 0 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0a.996.996 0 0 0 0-1.41l-1.06-1.06zm1.06-10.96a.996.996 0 0 0 0-1.41.996.996 0 0 0-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36a.996.996 0 0 0 0-1.41.996.996 0 0 0-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z";
+    out property <string> moon: "M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z";
+    out property <string> folder: "M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z";
+    out property <string> swap: "M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z";
+    out property <string> copy: "M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z";
+    out property <string> check: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z";
+    out property <string> warn: "M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z";
+    out property <string> trash: "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z";
+}
+
+export component VecIcon inherits VerticalLayout {
+    in property <string> path-data;
+    in property <color> icon-color: Theme.text-primary;
+    in property <length> icon-size: 18px;
+    width: root.icon-size;
+    alignment: center;
+
+    Path {
+        width: root.icon-size;
+        height: root.icon-size;
+        viewbox-x: 0;
+        viewbox-y: 0;
+        viewbox-width: 24;
+        viewbox-height: 24;
+        fill: root.icon-color;
+        commands: root.path-data;
+    }
+}
+
+export component FluentCard inherits Rectangle {
+    background: Theme.bg-card;
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: Theme.border;
+}
+
+export component StatusBadge inherits Rectangle {
+    in property <string> label;
+    in property <int> tone: 0; // 0=neutral, 1=success, 2=warning, 3=danger, 4=info
+    border-radius: 6px;
+    border-width: 1px;
+    height: 24px;
+    background: tone == 1 ? Theme.success-bg
+              : tone == 2 ? Theme.warning-bg
+              : tone == 3 ? Theme.danger-bg
+              : tone == 4 ? Theme.info-bg
+              : Theme.bg-subtle;
+    border-color: tone == 1 ? Theme.success-bd
+                : tone == 2 ? Theme.warning-bd
+                : tone == 3 ? Theme.danger-bd
+                : tone == 4 ? Theme.info-bd
+                : Theme.border;
+
+    HorizontalLayout {
+        padding-left: 9px;
+        padding-right: 9px;
+        alignment: center;
+        Text {
+            text: root.label;
+            font-size: 12px;
+            font-weight: 600;
+            vertical-alignment: center;
+            color: tone == 1 ? Theme.success-fg
+                 : tone == 2 ? Theme.warning-fg
+                 : tone == 3 ? Theme.danger-fg
+                 : tone == 4 ? Theme.info-fg
+                 : Theme.text-secondary;
+        }
+    }
+}
+
+export component PillFilter inherits Rectangle {
+    in property <string> label;
+    in property <bool> active: false;
+    callback clicked;
+
+    height: 30px;
+    border-radius: 15px;
+    border-width: 1px;
+    background: root.active ? Theme.accent-soft
+              : area.has-hover ? Theme.bg-card-hover : Theme.bg-card;
+    border-color: root.active ? Theme.accent-border : Theme.border;
+
+    animate background { duration: 140ms; }
+    animate border-color { duration: 140ms; }
+
+    area := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+
+    HorizontalLayout {
+        padding-left: 13px;
+        padding-right: 13px;
+        alignment: center;
+        Text {
+            text: root.label;
+            font-size: 12.5px;
+            font-weight: root.active ? 600 : 500;
+            vertical-alignment: center;
+            color: root.active ? Theme.accent : Theme.text-secondary;
+        }
+    }
+}
+
+export component PageHeader inherits VerticalLayout {
+    in property <string> title;
+    in property <string> subtitle;
+    spacing: 4px;
+
+    Text {
+        text: root.title;
+        font-size: 22px;
+        font-weight: 700;
+        color: Theme.text-primary;
+    }
+    Text {
+        text: root.subtitle;
+        font-size: 13.5px;
+        color: Theme.text-secondary;
+        wrap: word-wrap;
+    }
+}

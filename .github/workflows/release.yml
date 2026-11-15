@@ -17,6 +17,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Rust stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Configure CMake
         run: cmake -S . -B build -A x64
 
@@ -33,9 +36,8 @@ jobs:
           New-Item -ItemType Directory -Force -Path "$stage/assets" | Out-Null
           Copy-Item -Path build/Release/fluent_linker.exe -Destination $stage -Force
           Copy-Item -Path build/Release/*.dll -Destination $stage -Force -ErrorAction SilentlyContinue
-          Copy-Item -Path build/Release/assets/icon.ico -Destination "$stage/assets" -Force
-          Copy-Item -Path build/Release/assets/icon.png -Destination "$stage/assets" -Force
-          Copy-Item -Path "build/Release/assets/Font Awesome 7 Free-Solid-900.otf" -Destination "$stage/assets" -Force
+          Copy-Item -Path assets/icon.ico -Destination "$stage/assets" -Force
+          Copy-Item -Path assets/icon.png -Destination "$stage/assets" -Force
           Compress-Archive -Path "$stage/*" -DestinationPath $zipName -Force
 
       - name: Upload build artifact

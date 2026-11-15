@@ -1,5 +1,6 @@
 /build
 /build-check
+/dist
 /out
 /参考
 .DS_Store

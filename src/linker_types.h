@@ -1,9 +1,6 @@
 #pragma once
 
-#include "components/datatable.h"
-
 #include <cstdint>
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -126,25 +123,15 @@ struct AppState {
     InspectedLink inspectedSingle;
     bool hasInspectedSingle = false;
     std::vector<InspectedLink> scannedLinks;
-    std::shared_ptr<components::DataTableRows> inspectTableRows = std::make_shared<components::DataTableRows>();
-    std::uint64_t inspectTableRevision = 1;
     int selectedInspectIndex = -1;
     std::string inspectStatusText = "输入或选择路径后，可深入剖析单个链接属性或扫描整个文件夹下的符号链接。";
 
     // History Page state
     std::vector<HistoryItem> history;
-    std::shared_ptr<components::DataTableRows> historyTableRows = std::make_shared<components::DataTableRows>();
-    std::uint64_t historyTableRevision = 1;
     std::string historyFilterText;
     int historyCategoryFilter = 0; // 0=All, 1=/D, 2=/J, 3=/H, 4=FILE, 5=Success, 6=Fail
     std::vector<int> filteredHistoryIndices;
     int selectedHistoryIndex = -1;
-    float historyScrollOffset = 0.0f;
-
-    // Scroll offsets for pages
-    float createScrollOffset = 0.0f;
-    float inspectScrollOffset = 0.0f;
-    float guideScrollOffset = 0.0f;
 
     // Confirmation Dialog state
     bool confirmOpen = false;
@@ -158,7 +145,6 @@ struct AppState {
     bool toastVisible = false;
     std::string toastTitle;
     std::string toastMessage;
-    unsigned int toastIcon = 0xF058u;
     int toastTone = 1; // 0=info, 1=success, 2=warning, 3=error
 };
 

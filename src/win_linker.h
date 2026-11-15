@@ -1,8 +1,6 @@
 #pragma once
 
 #include "linker_types.h"
-#include "core/platform/async.h"
-#include "eui/platform.h"
 
 #include <windows.h>
 #include <shellapi.h>
@@ -11,11 +9,13 @@
 #include <winioctl.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cctype>
 #include <chrono>
 #include <ctime>
 #include <filesystem>
 #include <fstream>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -229,7 +229,7 @@ inline bool RelaunchAsAdmin() {
 }
 
 inline void OpenWindowsDeveloperSettings() {
-    eui::platform::openUrl("ms-settings:developers");
+    ShellExecuteW(nullptr, L"open", L"ms-settings:developers", nullptr, nullptr, SW_SHOWNORMAL);
 }
 
 inline std::string QuoteForCmd(const std::string& path) {
@@ -907,7 +907,10 @@ inline std::vector<InspectedLink> ScanDirectoryForLinks(
     const std::string& rootDirRaw,
     bool includeHardLinks,
     int maxDepth,
-    const core::async::CancelToken& cancel = {}) {
+    const std::shared_ptr<std::atomic_bool>& cancel = {}) {
+    auto isCanceled = [&]() -> bool {
+        return cancel && cancel->load(std::memory_order_relaxed);
+    };
     std::vector<InspectedLink> results;
     const std::string cleanRoot = CleanPathInput(rootDirRaw);
     if (cleanRoot.empty()) {
@@ -924,7 +927,7 @@ inline std::vector<InspectedLink> ScanDirectoryForLinks(
 
     constexpr std::size_t kMaxResults = 1500;
     while (!stack.empty() && results.size() < kMaxResults) {
-        if (cancel.canceled()) {
+        if (isCanceled()) {
             break;
         }
         QueueEntry cur = std::move(stack.back());
@@ -939,7 +942,7 @@ inline std::vector<InspectedLink> ScanDirectoryForLinks(
         }
 
         do {
-            if (cancel.canceled()) {
+            if (isCanceled()) {
                 break;
             }
             if (wcscmp(ffd.cFileName, L".") == 0 || wcscmp(ffd.cFileName, L"..") == 0) {
@@ -1041,39 +1044,65 @@ inline std::string ResolveExistingDirectoryHint(const std::string& rawPath) {
     return {};
 }
 
-inline std::string BrowseDirectory(const std::string& prompt, const std::string& initial = {}) {
-    eui::platform::FileDialogOptions opts;
-    opts.prompt = prompt;
-    opts.initialDirectory = ResolveExistingDirectoryHint(initial);
-    return eui::platform::chooseDirectory(opts);
-}
+namespace detail {
 
-inline std::string BrowseFile(const std::string& prompt, const std::string& initial = {}) {
-    eui::platform::FileDialogOptions opts;
-    opts.prompt = prompt;
-    opts.initialDirectory = ResolveExistingDirectoryHint(initial);
-    return eui::platform::chooseFile(opts);
-}
+struct ScopedComInit {
+    bool shouldUninit = false;
+    ScopedComInit() {
+        const HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+        shouldUninit = SUCCEEDED(hr);
+    }
+    ~ScopedComInit() {
+        if (shouldUninit) {
+            CoUninitialize();
+        }
+    }
+    ScopedComInit(const ScopedComInit&) = delete;
+    ScopedComInit& operator=(const ScopedComInit&) = delete;
+};
 
-inline bool ChooseNewLinkPath(std::string& outPath, bool preferFolderStyle = false) {
-    const HRESULT coHr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-    const bool shouldUninit = SUCCEEDED(coHr);
-
-    IFileSaveDialog* dlg = nullptr;
-    HRESULT hr = CoCreateInstance(CLSID_FileSaveDialog, nullptr, CLSCTX_ALL, IID_PPV_ARGS(&dlg));
+inline bool RunFileDialogSelection(bool isSave,
+                                   bool folderPicker,
+                                   const std::wstring& title,
+                                   const std::string& initial,
+                                   std::string& outPath) {
+    ScopedComInit com;
+    IFileDialog* dlg = nullptr;
+    const CLSID clsid = isSave ? CLSID_FileSaveDialog : CLSID_FileOpenDialog;
+    HRESULT hr = CoCreateInstance(clsid, nullptr, CLSCTX_ALL, IID_PPV_ARGS(&dlg));
     if (FAILED(hr) || !dlg) {
-        if (shouldUninit) CoUninitialize();
         return false;
     }
 
     DWORD opts = 0;
     dlg->GetOptions(&opts);
-    opts &= ~FOS_OVERWRITEPROMPT;
-    opts &= ~FOS_FILEMUSTEXIST;
-    opts |= FOS_PATHMUSTEXIST | FOS_DONTADDTORECENT;
+    opts |= FOS_DONTADDTORECENT;
+    if (isSave) {
+        opts &= ~FOS_OVERWRITEPROMPT;
+        opts &= ~FOS_FILEMUSTEXIST;
+        opts |= FOS_PATHMUSTEXIST;
+    } else {
+        opts |= FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST;
+        if (folderPicker) {
+            opts |= FOS_PICKFOLDERS;
+        } else {
+            opts |= FOS_FILEMUSTEXIST;
+        }
+    }
     dlg->SetOptions(opts);
-    dlg->SetTitle(preferFolderStyle ? L"指定新链接文件夹路径（填写名称即可，不会实际创建文件夹）"
-                                    : L"指定新链接文件路径");
+    if (!title.empty()) {
+        dlg->SetTitle(title.c_str());
+    }
+
+    const std::string dirHint = ResolveExistingDirectoryHint(initial);
+    if (!dirHint.empty()) {
+        IShellItem* folderItem = nullptr;
+        if (SUCCEEDED(SHCreateItemFromParsingName(Utf8ToWide(dirHint).c_str(), nullptr,
+                                                IID_PPV_ARGS(&folderItem))) && folderItem) {
+            dlg->SetFolder(folderItem);
+            folderItem->Release();
+        }
+    }
 
     bool ok = false;
     if (SUCCEEDED(dlg->Show(nullptr))) {
@@ -1090,8 +1119,28 @@ inline bool ChooseNewLinkPath(std::string& outPath, bool preferFolderStyle = fal
     }
 
     dlg->Release();
-    if (shouldUninit) CoUninitialize();
     return ok;
+}
+
+} // namespace detail
+
+inline std::string BrowseDirectory(const std::string& prompt, const std::string& initial = {}) {
+    std::string out;
+    detail::RunFileDialogSelection(false, true, Utf8ToWide(prompt), initial, out);
+    return out;
+}
+
+inline std::string BrowseFile(const std::string& prompt, const std::string& initial = {}) {
+    std::string out;
+    detail::RunFileDialogSelection(false, false, Utf8ToWide(prompt), initial, out);
+    return out;
+}
+
+inline bool ChooseNewLinkPath(std::string& outPath, bool preferFolderStyle = false) {
+    const std::wstring title = preferFolderStyle
+        ? L"指定新链接文件夹路径（填写名称即可，不会实际创建文件夹）"
+        : L"指定新链接文件路径";
+    return detail::RunFileDialogSelection(true, false, title, outPath, outPath);
 }
 
 inline bool RevealInExplorer(const std::string& rawPath) {
