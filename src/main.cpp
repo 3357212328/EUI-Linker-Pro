@@ -121,7 +121,7 @@ void compose(eui::Ui& ui, const eui::Screen& screen) {
         .build();
 
     const float headerH = 78.0f;
-    const float padX = 20.0f;
+    const float padX = 24.0f;
     const float padY = 16.0f;
     const float contentW = std::max(320.0f, screen.width - padX * 2.0f);
     const float contentH = std::max(240.0f, screen.height - headerH - padY * 2.0f);
@@ -148,7 +148,7 @@ void compose(eui::Ui& ui, const eui::Screen& screen) {
                     const bool compactHeader = screen.width < 1040.0f;
                     ui.row("app.header.row")
                         .size(screen.width, headerH)
-                        .padding(0.0f, padX, 0.0f, padX)
+                        .padding(padX, 0.0f)
                         .gap(compactHeader ? 8.0f : 14.0f)
                         .alignItems(eui::Align::CENTER)
                         .content([&] {
@@ -192,7 +192,7 @@ void compose(eui::Ui& ui, const eui::Screen& screen) {
                             ui.row("app.header.spL").flexGrow(1.0f).height(1.0f).content([] {}).build();
 
                             // 4-tab Top Segmented Navigation
-                            const float navW = std::clamp(screen.width - (compactHeader ? 480.0f : 610.0f), 330.0f, 480.0f);
+                            const float navW = std::clamp(screen.width - (compactHeader ? 490.0f : 630.0f), 320.0f, 480.0f);
                             components::segmented(ui, "app.nav")
                                 .theme(p.tokens)
                                 .size(navW, 42.0f)
@@ -208,7 +208,7 @@ void compose(eui::Ui& ui, const eui::Screen& screen) {
                             ui.row("app.header.spR").flexGrow(1.0f).height(1.0f).content([] {}).build();
 
                             // Privilege Pill + Theme Switcher
-                            const float privW = compactHeader ? 114.0f : 136.0f;
+                            const float privW = compactHeader ? 114.0f : 142.0f;
                             if (state.isAdmin) {
                                 fl::ui_kit::StatusBadge(ui, "app.privBadge", p, privW, 32.0f,
                                                         "管理员模式", 0xF3EDu, p.success);
@@ -233,7 +233,7 @@ void compose(eui::Ui& ui, const eui::Screen& screen) {
                                                         });
                             }
 
-                            fl::ui_kit::ActionButton(ui, "app.themeToggle", p, compactHeader ? 82.0f : 92.0f, 36.0f,
+                            fl::ui_kit::ActionButton(ui, "app.themeToggle", p, compactHeader ? 84.0f : 96.0f, 36.0f,
                                                      state.darkTheme ? "浅色" : "深色",
                                                      state.darkTheme ? 0xF185u : 0xF186u,
                                                      fl::ui_kit::ButtonKind::Secondary,
@@ -250,7 +250,7 @@ void compose(eui::Ui& ui, const eui::Screen& screen) {
             // Active Page Body
             ui.stack("app.body")
                 .size(screen.width, screen.height - headerH)
-                .padding(padY, padX, padY, padX)
+                .padding(padX, padY)
                 .content([&] {
                     switch (state.activeTab) {
                         case 0:

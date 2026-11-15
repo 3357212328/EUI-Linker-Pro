@@ -62,7 +62,7 @@ inline void DrawLinkTypeCard(eui::Ui& ui,
 
             ui.column(id + ".col")
                 .size(width, height)
-                .padding(12.0f, 14.0f, 12.0f, 14.0f)
+                .padding(14.0f, 12.0f)
                 .gap(6.0f)
                 .content([&] {
                     ui.row(id + ".top")
