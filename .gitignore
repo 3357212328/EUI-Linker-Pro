@@ -1,10 +1,10 @@
 /build
-/参考
 /build-check
+/out
+/参考
 .DS_Store
-mklink_history.tsv
-window_state.txt
 .vs/
+out/
 x64/
 *.pdb
 *.exe
@@ -17,3 +17,6 @@ x64/
 *.ipdb
 *.log
 *.recipe
+*.user
+mklink_history.tsv
+window_state.txt

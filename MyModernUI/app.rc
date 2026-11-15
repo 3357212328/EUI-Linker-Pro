@@ -1,4 +1,0 @@
-// app.rc - Application resource file
-#include "resource.h"
-
-IDI_APPICON ICON "app.ico"

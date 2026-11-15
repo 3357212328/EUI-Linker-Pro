@@ -1,7 +1,0 @@
-<Solution>
-  <Configurations>
-    <Platform Name="x64" />
-    <Platform Name="x86" />
-  </Configurations>
-  <Project Path="MyModernUI.vcxproj" Id="86183e12-4ac2-4923-bca9-62e0c7110dce" />
-</Solution>
