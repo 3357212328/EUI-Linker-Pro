@@ -4,7 +4,6 @@
 #include <QIcon>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
-#include <QQuickStyle>
 #include <QWindow>
 
 int main(int argc, char* argv[]) {
@@ -16,8 +15,6 @@ int main(int argc, char* argv[]) {
     app.setApplicationDisplayName(QStringLiteral("Fluent Linker Pro"));
     app.setOrganizationName(QStringLiteral("FluentLinker"));
     app.setWindowIcon(QIcon(QStringLiteral(":/qt/qml/FluentLinker/assets/icon.png")));
-
-    QQuickStyle::setStyle(QStringLiteral("Basic"));
 
     fl::QtLinkBackend backend;
 

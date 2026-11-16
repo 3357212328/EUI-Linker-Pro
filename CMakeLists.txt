@@ -10,7 +10,7 @@ if(NOT DEFINED CMAKE_PREFIX_PATH AND EXISTS "D:/Qt/6.8.3/msvc2022_64/lib/cmake/Q
     list(APPEND CMAKE_PREFIX_PATH "D:/Qt/6.8.3/msvc2022_64")
 endif()
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Qml Quick)
 qt_standard_project_setup(REQUIRES 6.5)
 
 set(QML_SOURCES
@@ -60,7 +60,6 @@ target_link_libraries(fluent_linker PRIVATE
     Qt6::Gui
     Qt6::Qml
     Qt6::Quick
-    Qt6::QuickControls2
     dwmapi
     shell32
     ole32
@@ -90,7 +89,12 @@ add_custom_command(TARGET fluent_linker POST_BUILD
         "$<IF:$<CONFIG:Debug>,--debug,--release>"
         --qmldir "${CMAKE_CURRENT_SOURCE_DIR}/src/qml"
         --no-translations
+        --no-opengl-sw
+        --no-compiler-runtime
+        --no-system-d3d-compiler
+        --no-system-dxc-compiler
+        --skip-plugin-types qmltooling,generic,networkinformation,tls,imageformats,iconengines
         "$<TARGET_FILE:fluent_linker>"
-    COMMENT "Running windeployqt for fluent_linker..."
+    COMMENT "Running slim windeployqt for fluent_linker..."
     VERBATIM
 )

@@ -26,7 +26,7 @@ jobs:
           host: 'windows'
           target: 'desktop'
           arch: 'win64_msvc2022_64'
-          modules: 'qtshadertools qtimageformats'
+          modules: 'qtshadertools'
 
       - name: Configure CMake
         run: cmake -S . -B build -A x64
@@ -45,6 +45,8 @@ jobs:
           Get-ChildItem -Path "build/Release" | Where-Object {
             $_.Name -notin @("fluent_linker.exp", "fluent_linker.lib", "fluent_linker.pdb") -and $_.Extension -ne ".pdb"
           } | Copy-Item -Destination $stage -Recurse -Force
+          Get-ChildItem -Path $stage -Recurse -Filter "*.qmltypes" | Remove-Item -Force
+          Get-ChildItem -Path "$stage/qml" -Recurse -Directory | Sort-Object { $_.FullName.Length } -Descending | Where-Object { (Get-ChildItem $_.FullName -Force).Count -eq 0 } | Remove-Item -Force
           Copy-Item -Path assets/icon.ico -Destination "$stage/assets" -Force
           Copy-Item -Path assets/icon.png -Destination "$stage/assets" -Force
           Compress-Archive -Path "$stage/*" -DestinationPath $zipName -Force
